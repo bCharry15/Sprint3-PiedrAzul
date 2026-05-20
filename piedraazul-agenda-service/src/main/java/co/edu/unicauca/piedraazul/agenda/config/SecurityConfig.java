@@ -26,19 +26,25 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/agenda/health").permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
+    .requestMatchers(
+        "/api/agenda/health",
+        "/swagger-ui.html",
+        "/swagger-ui/**",
+        "/v3/api-docs/**"
+    ).permitAll()
 
-                .requestMatchers("/api/medicos/**").hasRole("ADMIN")
-                .requestMatchers("/api/configuraciones-disponibilidad/**").hasRole("ADMIN")
+    .requestMatchers("/api/auth/**").permitAll()
 
-                .requestMatchers("/api/citas/exportar").hasAnyRole("ADMIN", "AGENDADOR")
-                .requestMatchers("/api/citas/**").hasAnyRole("ADMIN", "AGENDADOR", "PACIENTE", "MEDICO")
+    .requestMatchers("/api/medicos/**").hasRole("ADMIN")
+    .requestMatchers("/api/configuraciones-disponibilidad/**").hasRole("ADMIN")
 
-                .requestMatchers("/api/disponibilidad/**").hasAnyRole("ADMIN", "AGENDADOR", "PACIENTE", "MEDICO")
+    .requestMatchers("/api/citas/exportar").hasAnyRole("ADMIN", "AGENDADOR")
+    .requestMatchers("/api/citas/**").hasAnyRole("ADMIN", "AGENDADOR", "PACIENTE", "MEDICO")
 
-                .anyRequest().authenticated()
-            )
+    .requestMatchers("/api/disponibilidad/**").hasAnyRole("ADMIN", "AGENDADOR", "PACIENTE", "MEDICO")
+
+    .anyRequest().authenticated()
+)
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
             );
