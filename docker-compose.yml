@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   mariadb-agenda:
     image: mariadb:11.4
@@ -46,6 +44,25 @@ services:
     networks:
       - piedraazul-network
 
+  notification-service:
+    build:
+      context: ./piedraazul-notification-service
+      dockerfile: Dockerfile
+    container_name: piedraazul-notification-service
+    restart: unless-stopped
+    depends_on:
+      - mariadb-notification
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb-notification:3306/piedraazul_notifications
+      SPRING_DATASOURCE_USERNAME: piedraazul
+      SPRING_DATASOURCE_PASSWORD: piedraazul
+      NOTIFICATION_MAIL_ENABLED: "false"
+      NOTIFICATION_MAIL_FROM: no-reply@piedraazul.com
+    ports:
+      - "8082:8082"
+    networks:
+      - piedraazul-network
+
   agenda-service:
     build:
       context: ./piedraazul-agenda-service
@@ -55,6 +72,7 @@ services:
     depends_on:
       - mariadb-agenda
       - keycloak
+      - notification-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb-agenda:3306/piedraazul_agenda
       SPRING_DATASOURCE_USERNAME: piedraazul
