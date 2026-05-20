@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane prefHeight="760.0" prefWidth="1280.0"
+            xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="co.edu.unicauca.piedraazul.controller.AdminPanelController"
+            styleClass="dashboard-root">
+
+    <left>
+        <VBox prefWidth="250.0" spacing="16.0" styleClass="sidebar">
+            <children>
+                <VBox spacing="4.0">
+                    <children>
+                        <Label text="Piedrazul" styleClass="sidebar-title"/>
+                        <Label text="Panel administrativo" styleClass="sidebar-subtitle"/>
+                    </children>
+                </VBox>
+
+                <VBox spacing="8.0">
+                    <children>
+                        <Button fx:id="gestionMedicosButton"
+                                text="Gestión de médicos"
+                                onAction="#mostrarGestionMedicos"
+                                styleClass="menu-button-active"
+                                maxWidth="Infinity"/>
+
+                        <Button fx:id="gestionAgendadoresButton"
+                                text="Gestión de agendadores"
+                                onAction="#mostrarGestionAgendadores"
+                                styleClass="menu-button"
+                                maxWidth="Infinity"/>
+                    </children>
+                </VBox>
+
+                <VBox VBox.vgrow="ALWAYS"/>
+
+                <Button text="Volver"
+                        onAction="#volver"
+                        styleClass="secondary-button"
+                        maxWidth="Infinity"/>
+
+                <Button text="Cerrar sesión"
+                        onAction="#logout"
+                        styleClass="secondary-button"
+                        maxWidth="Infinity"/>
+            </children>
+
+            <padding>
+                <Insets top="24.0" right="18.0" bottom="24.0" left="18.0"/>
+            </padding>
+        </VBox>
+    </left>
+
+    <center>
+        <VBox spacing="20.0" styleClass="content-area">
+            <children>
+                <VBox spacing="6.0">
+                    <children>
+                        <Label fx:id="tituloSeccionLabel" text="Gestión administrativa" styleClass="top-title"/>
+                        <Label fx:id="subtituloSeccionLabel"
+                               text="Desde este panel el administrador puede registrar médicos y agendadores."
+                               styleClass="top-subtitle"/>
+                    </children>
+                </VBox>
+
+                <VBox fx:id="gestionMedicosSection" spacing="20.0">
+                    <children>
+                        <VBox spacing="14.0" styleClass="form-card">
+                            <children>
+                                <Label text="Crear nuevo médico" styleClass="form-title"/>
+
+                                <GridPane hgap="16.0" vgap="12.0">
+                                    <columnConstraints>
+                                        <ColumnConstraints percentWidth="50.0"/>
+                                        <ColumnConstraints percentWidth="50.0"/>
+                                    </columnConstraints>
+
+                                    <children>
+                                        <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                            <children>
+                                                <Label text="Nombre completo" styleClass="field-label"/>
+                                                <TextField fx:id="nombreCompletoField" promptText="Ingrese nombre completo"/>
+                                            </children>
+                                        </VBox>
+
+                                        <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                            <children>
+                                                <Label text="Especialidad" styleClass="field-label"/>
+                                                <TextField fx:id="especialidadField" promptText="Ej: Psicología"/>
+                                            </children>
+                                        </VBox>
+
+                                        <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                                            <children>
+                                                <Label text="Intervalo de atención (minutos)" styleClass="field-label"/>
+                                                <TextField fx:id="intervaloField" promptText="Ej: 30"/>
+                                            </children>
+                                        </VBox>
+
+                                        <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                            <children>
+                                                <Label text="Nombre de usuario" styleClass="field-label"/>
+                                                <TextField fx:id="usernameField" promptText="Ej: dra.ana"/>
+                                            </children>
+                                        </VBox>
+
+                                        <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                                            <children>
+                                                <Label text="Contraseña" styleClass="field-label"/>
+                                                <PasswordField fx:id="passwordField" promptText="Ingrese contraseña"/>
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </GridPane>
+
+                                <HBox spacing="12.0">
+                                    <children>
+                                        <Button text="Registrar médico"
+                                                onAction="#registrarMedico"
+                                                styleClass="content-button"/>
+
+                                        <Button text="Limpiar"
+                                                onAction="#limpiarFormularioMedico"
+                                                styleClass="secondary-button"/>
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+
+                        <VBox spacing="14.0" styleClass="form-card">
+                            <children>
+                                <Label text="Médicos registrados" styleClass="form-title"/>
+
+                                <TableView fx:id="medicosTable" prefHeight="220.0">
+                                    <columns>
+                                        <TableColumn fx:id="idColumn" text="ID" prefWidth="70.0"/>
+                                        <TableColumn fx:id="nombreColumn" text="Nombre completo" prefWidth="260.0"/>
+                                        <TableColumn fx:id="especialidadColumn" text="Especialidad" prefWidth="220.0"/>
+                                        <TableColumn fx:id="intervaloColumn" text="Intervalo" prefWidth="120.0"/>
+                                        <TableColumn fx:id="usernameColumn" text="Usuario" prefWidth="180.0"/>
+                                    </columns>
+                                </TableView>
+                            </children>
+                        </VBox>
+                    </children>
+                </VBox>
+
+                <VBox fx:id="gestionAgendadoresSection" spacing="20.0" visible="false" managed="false">
+                    <children>
+                        <VBox spacing="14.0" styleClass="form-card">
+                            <children>
+                                <Label text="Crear nuevo agendador" styleClass="form-title"/>
+
+                                <GridPane hgap="16.0" vgap="12.0">
+                                    <columnConstraints>
+                                        <ColumnConstraints percentWidth="50.0"/>
+                                        <ColumnConstraints percentWidth="50.0"/>
+                                    </columnConstraints>
+
+                                    <children>
+                                        <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                            <children>
+                                                <Label text="Nombre de usuario" styleClass="field-label"/>
+                                                <TextField fx:id="agendadorUsernameField" promptText="Ej: agendador1"/>
+                                            </children>
+                                        </VBox>
+
+                                        <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                            <children>
+                                                <Label text="Contraseña" styleClass="field-label"/>
+                                                <PasswordField fx:id="agendadorPasswordField" promptText="Ingrese contraseña"/>
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </GridPane>
+
+                                <HBox spacing="12.0">
+                                    <children>
+                                        <Button text="Registrar agendador"
+                                                onAction="#registrarAgendador"
+                                                styleClass="content-button"/>
+
+                                        <Button text="Limpiar"
+                                                onAction="#limpiarFormularioAgendador"
+                                                styleClass="secondary-button"/>
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+
+                        <VBox spacing="14.0" styleClass="form-card">
+                            <children>
+                                <Label text="Agendadores registrados" styleClass="form-title"/>
+
+                                <TableView fx:id="agendadoresTable" prefHeight="220.0">
+                                    <columns>
+                                        <TableColumn fx:id="agendadorIdColumn" text="ID" prefWidth="90.0"/>
+                                        <TableColumn fx:id="agendadorUsernameColumn" text="Usuario" prefWidth="240.0"/>
+                                        <TableColumn fx:id="agendadorStatusColumn" text="Estado" prefWidth="180.0"/>
+                                        <TableColumn fx:id="agendadorRoleColumn" text="Rol" prefWidth="180.0"/>
+                                    </columns>
+                                </TableView>
+                            </children>
+                        </VBox>
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
+    </center>
+</BorderPane>

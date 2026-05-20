@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane prefHeight="700.0" prefWidth="1100.0"
+            xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="co.edu.unicauca.piedraazul.controller.UserPanelController"
+            styleClass="dashboard-root">
+
+    <left>
+        <VBox prefWidth="250.0" spacing="16.0" styleClass="sidebar">
+            <children>
+                <VBox spacing="4.0">
+                    <children>
+                        <Label text="Piedrazul" styleClass="sidebar-title"/>
+                        <Label text="Panel del paciente" styleClass="sidebar-subtitle"/>
+                    </children>
+                </VBox>
+
+                <VBox spacing="8.0">
+                    <children>
+                        <Button text="Inicio" styleClass="menu-button-active" maxWidth="Infinity"/>
+                        <Button text="Mis citas" styleClass="menu-button" maxWidth="Infinity"/>
+                        <Button text="Historial" styleClass="menu-button" maxWidth="Infinity"/>
+                        <Button text="Mi perfil" styleClass="menu-button" maxWidth="Infinity"/>
+                        <Button text="Configuración" styleClass="menu-button" maxWidth="Infinity"/>
+                    </children>
+                </VBox>
+
+                <VBox VBox.vgrow="ALWAYS"/>
+
+                <Button text="Cerrar sesión"
+                        onAction="#logout"
+                        styleClass="secondary-button"
+                        maxWidth="Infinity"/>
+            </children>
+
+            <padding>
+                <Insets top="24.0" right="18.0" bottom="24.0" left="18.0"/>
+            </padding>
+        </VBox>
+    </left>
+
+    <center>
+        <VBox spacing="20.0" styleClass="content-area">
+            <children>
+                <VBox spacing="6.0">
+                    <children>
+                        <Label text="Bienvenido a Piedrazul" styleClass="top-title"/>
+                        <Label text="Desde aquí puede consultar sus citas, revisar su historial y actualizar su información personal." styleClass="top-subtitle"/>
+                    </children>
+                </VBox>
+
+                <HBox spacing="16.0">
+                    <children>
+                        <VBox spacing="8.0" styleClass="stat-card">
+                            <children>
+                                <Label text="2" styleClass="stat-number"/>
+                                <Label text="Próximas citas" styleClass="stat-label"/>
+                            </children>
+                        </VBox>
+
+                        <VBox spacing="8.0" styleClass="stat-card">
+                            <children>
+                                <Label text="5" styleClass="stat-number"/>
+                                <Label text="Citas completadas" styleClass="stat-label"/>
+                            </children>
+                        </VBox>
+
+                        <VBox spacing="8.0" styleClass="stat-card">
+                            <children>
+                                <Label text="1" styleClass="stat-number"/>
+                                <Label text="Resultados pendientes" styleClass="stat-label"/>
+                            </children>
+                        </VBox>
+                    </children>
+                </HBox>
+
+                <VBox spacing="12.0" styleClass="info-card">
+                    <children>
+                        <Label text="Acciones rápidas" styleClass="info-card-title"/>
+                        <Label text="Aquí puede acceder rápidamente a las funciones más usadas por el paciente." styleClass="info-card-text"/>
+
+                        <HBox spacing="12.0">
+                            <children>
+                                <Button text="Agendar cita" styleClass="content-button"/>
+                                <Button text="Ver historial" styleClass="content-button"/>
+                                <Button text="Actualizar perfil" styleClass="content-button"/>
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+
+                <VBox spacing="12.0" styleClass="info-card">
+                    <children>
+                        <Label text="Información importante" styleClass="info-card-title"/>
+                        <Label text="Más adelante este módulo puede mostrar recordatorios, observaciones médicas, notificaciones o recomendaciones personalizadas." styleClass="info-card-text"/>
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
+    </center>
+</BorderPane>

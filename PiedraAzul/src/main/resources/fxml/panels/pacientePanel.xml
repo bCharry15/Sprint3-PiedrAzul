@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="co.edu.unicauca.piedraazul.controller.PacientePanelController"
+            style="-fx-background-color: #f4f6f8;">
+
+    <!-- Menú lateral -->
+    <left>
+        <VBox spacing="15"
+              prefWidth="240"
+              style="-fx-background-color: #12324a;"
+              BorderPane.alignment="CENTER">
+            <padding>
+                <Insets top="25" right="20" bottom="25" left="20"/>
+            </padding>
+
+            <Label text="PiedraAzul"
+                   style="-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;"/>
+
+            <Label text="Panel Paciente"
+                   style="-fx-text-fill: #d6e4ef; -fx-font-size: 15px;"/>
+
+            <Separator/>
+
+            <Label text="Agendamiento autónomo"
+                   style="-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;"/>
+
+            <Label text="Consulta médicos, revisa franjas disponibles y agenda tu cita sin usar WhatsApp."
+                   wrapText="true"
+                   style="-fx-text-fill: #d6e4ef; -fx-font-size: 12px;"/>
+
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <Button text="Cerrar sesión"
+                    maxWidth="Infinity"
+                    onAction="#logout"
+                    style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold;"/>
+        </VBox>
+    </left>
+
+    <!-- Contenido principal -->
+    <center>
+        <ScrollPane fitToWidth="true"
+                    style="-fx-background: transparent; -fx-background-color: transparent;">
+            <content>
+                <VBox spacing="20">
+                    <padding>
+                        <Insets top="25" right="35" bottom="35" left="35"/>
+                    </padding>
+
+                    <VBox spacing="5">
+                        <Label text="Agendamiento autónomo de citas"
+                               style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #1f2d3d;"/>
+
+                        <Label text="Completa tus datos, selecciona un médico/terapista, consulta las franjas disponibles y confirma tu cita."
+                               wrapText="true"
+                               style="-fx-font-size: 14px; -fx-text-fill: #5d6d7e;"/>
+                    </VBox>
+
+                    <!-- Datos del paciente -->
+                    <VBox spacing="12"
+                          style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 22; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 8, 0, 0, 2);">
+
+                        <Label text="Datos del paciente"
+                               style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1f2d3d;"/>
+
+                        <GridPane hgap="15" vgap="14">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="25"/>
+                            </columnConstraints>
+
+                            <Label text="Tipo documento *" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                            <ComboBox fx:id="cmbTipoDocumento"
+                                      maxWidth="Infinity"
+                                      GridPane.rowIndex="1"
+                                      GridPane.columnIndex="0"/>
+
+                            <Label text="Número documento *" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                            <TextField fx:id="txtNumeroDocumento"
+                                       promptText="Ej: 1099999995"
+                                       GridPane.rowIndex="1"
+                                       GridPane.columnIndex="1"/>
+
+                            <Label text="Nombres *" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                            <TextField fx:id="txtNombres"
+                                       promptText="Ej: Daniela"
+                                       GridPane.rowIndex="1"
+                                       GridPane.columnIndex="2"/>
+
+                            <Label text="Apellidos *" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+                            <TextField fx:id="txtApellidos"
+                                       promptText="Ej: Muñoz"
+                                       GridPane.rowIndex="1"
+                                       GridPane.columnIndex="3"/>
+
+                            <Label text="Celular *" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                            <TextField fx:id="txtCelular"
+                                       promptText="Ej: 3004445566"
+                                       GridPane.rowIndex="3"
+                                       GridPane.columnIndex="0"/>
+
+                            <Label text="Género *" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                            <ComboBox fx:id="cmbGenero"
+                                      maxWidth="Infinity"
+                                      GridPane.rowIndex="3"
+                                      GridPane.columnIndex="1"/>
+
+                            <Label text="Fecha nacimiento" GridPane.rowIndex="2" GridPane.columnIndex="2"/>
+                            <DatePicker fx:id="dpFechaNacimiento"
+                                        maxWidth="Infinity"
+                                        GridPane.rowIndex="3"
+                                        GridPane.columnIndex="2"/>
+
+                            <Label text="Correo electrónico" GridPane.rowIndex="2" GridPane.columnIndex="3"/>
+                            <TextField fx:id="txtCorreo"
+                                       promptText="correo@example.com"
+                                       GridPane.rowIndex="3"
+                                       GridPane.columnIndex="3"/>
+                        </GridPane>
+                    </VBox>
+
+                    <!-- Datos de la cita -->
+                    <VBox spacing="12"
+                          style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 22; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 8, 0, 0, 2);">
+
+                        <Label text="Datos de la cita"
+                               style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1f2d3d;"/>
+
+                        <GridPane hgap="15" vgap="14">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="35"/>
+                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="20"/>
+                                <ColumnConstraints percentWidth="20"/>
+                            </columnConstraints>
+
+                            <Label text="Médico/Terapista *" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                            <ComboBox fx:id="cmbMedico"
+                                      maxWidth="Infinity"
+                                      promptText="Seleccione un médico"
+                                      GridPane.rowIndex="1"
+                                      GridPane.columnIndex="0"/>
+
+                            <Label text="Fecha de cita *" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                            <DatePicker fx:id="dpFechaCita"
+                                        maxWidth="Infinity"
+                                        GridPane.rowIndex="1"
+                                        GridPane.columnIndex="1"/>
+
+                            <Label text="Hora disponible *" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                            <ComboBox fx:id="cmbHoraDisponible"
+                                      maxWidth="Infinity"
+                                      promptText="Seleccione hora"
+                                      GridPane.rowIndex="1"
+                                      GridPane.columnIndex="2"/>
+
+                            <Button text="Consultar disponibilidad"
+                                    onAction="#consultarDisponibilidad"
+                                    maxWidth="Infinity"
+                                    style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-font-weight: bold;"
+                                    GridPane.rowIndex="1"
+                                    GridPane.columnIndex="3"/>
+
+                            <Label text="Observación" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                            <TextArea fx:id="txtObservacion"
+                                      promptText="Describe brevemente el motivo de la cita"
+                                      prefRowCount="3"
+                                      wrapText="true"
+                                      GridPane.rowIndex="3"
+                                      GridPane.columnIndex="0"
+                                      GridPane.columnSpan="4"/>
+                        </GridPane>
+
+                        <HBox spacing="12">
+                            <Region HBox.hgrow="ALWAYS"/>
+
+                            <Button text="Confirmar cita"
+                                    onAction="#agendarCita"
+                                    prefWidth="180"
+                                    style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;"/>
+                        </HBox>
+                    </VBox>
+
+                    <Label text="* Campos obligatorios"
+                           style="-fx-text-fill: #7f8c8d; -fx-font-size: 12px;"/>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+</BorderPane>

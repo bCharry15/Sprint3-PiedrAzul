@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+  mariadb-agenda:
+    image: mariadb:11.4
+    container_name: piedraazul-mariadb-agenda
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: piedraazul_agenda
+      MARIADB_USER: piedraazul
+      MARIADB_PASSWORD: piedraazul
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb_agenda_data:/var/lib/mysql
+    networks:
+      - piedraazul-network
+
+  mariadb-notification:
+    image: mariadb:11.4
+    container_name: piedraazul-mariadb-notification
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: piedraazul_notifications
+      MARIADB_USER: piedraazul
+      MARIADB_PASSWORD: piedraazul
+    ports:
+      - "3308:3306"
+    volumes:
+      - mariadb_notification_data:/var/lib/mysql
+    networks:
+      - piedraazul-network
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0.6
+    container_name: piedraazul-keycloak
+    command: start-dev
+    restart: unless-stopped
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8085:8080"
+    networks:
+      - piedraazul-network
+
+volumes:
+  mariadb_agenda_data:
+  mariadb_notification_data:
+
+networks:
+  piedraazul-network:
+    driver: bridge

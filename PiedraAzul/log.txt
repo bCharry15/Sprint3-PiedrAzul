@@ -1,0 +1,14 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< co.edu.unicauca:piedra-azul >---------------------
+[INFO] Building piedra-azul 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.3.2:clean (default-clean) @ piedra-azul ---
+[INFO] Deleting C:\Users\jpuen\Documents\NetBeansProjects\PiedraAzul\target
+[INFO] 
+[INFO] >>> javafx:0.0.8:run (default-cli) > process-classes @ piedra-azul >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ piedra-azul ---
+^C¨Desea terminar el trabajo por lotes (S/N)? 
