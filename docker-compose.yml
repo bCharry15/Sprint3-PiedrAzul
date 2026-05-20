@@ -46,6 +46,27 @@ services:
     networks:
       - piedraazul-network
 
+  agenda-service:
+    build:
+      context: ./piedraazul-agenda-service
+      dockerfile: Dockerfile
+    container_name: piedraazul-agenda-service
+    restart: unless-stopped
+    depends_on:
+      - mariadb-agenda
+      - keycloak
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb-agenda:3306/piedraazul_agenda
+      SPRING_DATASOURCE_USERNAME: piedraazul
+      SPRING_DATASOURCE_PASSWORD: piedraazul
+      KEYCLOAK_ISSUER_URI: http://localhost:8085/realms/PiedrAzul
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/PiedrAzul/protocol/openid-connect/certs
+      NOTIFICATION_SERVICE_URL: http://notification-service:8082
+    ports:
+      - "8081:8081"
+    networks:
+      - piedraazul-network
+
 volumes:
   mariadb_agenda_data:
   mariadb_notification_data:
