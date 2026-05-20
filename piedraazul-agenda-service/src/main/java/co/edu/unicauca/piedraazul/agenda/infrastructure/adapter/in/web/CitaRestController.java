@@ -16,13 +16,13 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import co.edu.unicauca.piedraazul.agenda.application.dto.CrearCitaCommand;
+import co.edu.unicauca.piedraazul.agenda.domain.port.in.CrearCitaUseCase;
 import co.edu.unicauca.piedraazul.agenda.model.Cita;
 import co.edu.unicauca.piedraazul.agenda.model.Medico;
 import co.edu.unicauca.piedraazul.agenda.model.dto.CitaResponse;
 import co.edu.unicauca.piedraazul.agenda.model.dto.CitasPorMedicoFechaResponse;
-import co.edu.unicauca.piedraazul.agenda.model.dto.CrearCitaRequest;
 import co.edu.unicauca.piedraazul.agenda.pattern.builder.CitaResponseBuilder;
-import co.edu.unicauca.piedraazul.agenda.pattern.facade.AgendaFacade;
 import co.edu.unicauca.piedraazul.agenda.service.ICitaService;
 import co.edu.unicauca.piedraazul.agenda.service.IMedicoService;
 
@@ -32,14 +32,14 @@ public class CitaRestController {
 
     private final ICitaService citaService;
     private final IMedicoService medicoService;
-    private final AgendaFacade agendaFacade;
+    private final CrearCitaUseCase crearCitaUseCase;
 
     public CitaRestController(ICitaService citaService,
                               IMedicoService medicoService,
-                              AgendaFacade agendaFacade) {
+                              CrearCitaUseCase crearCitaUseCase) {
         this.citaService = citaService;
         this.medicoService = medicoService;
-        this.agendaFacade = agendaFacade;
+        this.crearCitaUseCase = crearCitaUseCase;
     }
 
     @GetMapping
@@ -95,9 +95,10 @@ public class CitaRestController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CitaResponse crearCita(@RequestBody CrearCitaRequest request) {
-        Cita citaCreada = agendaFacade.crearCitaDesdeSolicitud(request);
-        return convertirACitaResponse(citaCreada);
+    public co.edu.unicauca.piedraazul.agenda.application.dto.CitaResponse crearCita(
+            @RequestBody CrearCitaCommand command
+    ) {
+        return crearCitaUseCase.crearCita(command);
     }
 
     private Medico obtenerMedicoPorId(Long medicoId) {
