@@ -1,70 +1,45 @@
-\# Sistema Piedra Azul - Segundo Corte
+# PiedraAzul - Sistema de Agendamiento Médico
 
+PiedraAzul es un sistema de agendamiento médico desarrollado como proyecto académico para Ingeniería de Software. Permite gestionar pacientes, médicos/terapistas, disponibilidad, citas, historial y notificaciones.
 
+## Tecnologías utilizadas
 
-Proyecto refactorizado hacia una arquitectura distribuida basada en microservicios y comunicación REST.
+- Java 17
+- JavaFX
+- Spring Boot
+- MariaDB
+- Docker Compose
+- Keycloak
+- Arquitectura hexagonal en el microservicio de agenda
+- Microservicio de notificaciones
+- Autenticación y autorización con JWT
 
+## Módulos principales
 
+- `PiedraAzul`: aplicación cliente JavaFX.
+- `piedraazul-agenda-service`: microservicio principal de agenda médica.
+- `piedraazul-notification-service`: microservicio encargado de registrar y procesar notificaciones.
+- `docker-compose.yml`: orquestación de servicios, bases de datos y Keycloak.
 
-\## Estructura del proyecto
+## Funcionalidades implementadas
 
+- Registro e inicio de sesión por roles.
+- Gestión de médicos y terapistas.
+- Gestión de agendadores.
+- Configuración de disponibilidad por médico/terapista.
+- Agendamiento autónomo por paciente.
+- Validación de citas activas para evitar múltiples citas pendientes.
+- Validación de días festivos.
+- Validación de ventana de agendamiento.
+- Validación de horarios e intervalos de atención.
+- Cambio de estado de citas por médico.
+- Exportación de citas a CSV.
+- Historial de citas del paciente.
+- Registro de notificaciones.
 
+## Ejecución con Docker
 
-\- `SistemaPiedraAzul-main/PiedraAzul`: aplicación principal JavaFX.
+Desde la raíz del proyecto:
 
-\- `piedraazul-agenda-service`: microservicio de agenda, citas, médicos, disponibilidad y autenticación.
-
-\- `piedraazul-notification-service`: microservicio de notificaciones.
-
-
-
-\## Funcionalidades principales
-
-
-
-\- RF1: listar citas por médico y fecha.
-
-\- RF2: crear citas desde el rol agendador.
-
-\- RF3: agendamiento autónomo desde el rol paciente.
-
-\- RF4: configuración de disponibilidad médica desde el rol administrador.
-
-
-
-\## Arquitectura
-
-
-
-El sistema separa la interfaz gráfica de los servicios de negocio mediante APIs REST.  
-
-`PiedraAzul` consume `agenda-service`, y `agenda-service` se comunica con `notification-service` para registrar notificaciones de citas.
-
-
-
-\## Patrones GoF implementados
-
-
-
-\- Builder
-
-\- Factory
-
-\- Facade
-
-\- Adapter
-
-\- Strategy
-
-\- Observer
-
-
-
-\## Servicios
-
-
-
-\- Agenda Service: `http://localhost:8081`
-
-\- Notification Service: `http://localhost:8082`
-
+```bash
+docker compose up --build -d
