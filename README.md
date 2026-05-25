@@ -43,3 +43,16 @@ Desde la raíz del proyecto:
 
 ```bash
 docker compose up --build -d
+
+Ejecución del cliente JavaFX
+cd PiedraAzul
+mvn clean javafx:run
+
+Usuarios de prueba
+Rol	Usuario	Contraseña
+Administrador	admin	admin123
+Paciente	paciente	paciente123
+Agendador	agendador	agendador123
+Estado del proyecto
+
+Proyecto funcional para entrega académica, con integración entre frontend JavaFX, microservicio de agenda, microservicio de notificaciones, autenticación con Keycloak y persistencia en MariaDB.
