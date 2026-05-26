@@ -59,19 +59,24 @@ public class CrearCitaService implements CrearCitaUseCase {
     private final CrearCitaPort crearCitaPort;
     private final BuscarCitasPort buscarCitasPort;
     private final PublicarCitaCreadaEventPort publicarCitaCreadaEventPort;
+    private final DbiiSincronizacionService dbiiSincronizacionService;
 
-    public CrearCitaService(BuscarMedicoPort buscarMedicoPort,
-                            BuscarDisponibilidadMedicoPort buscarDisponibilidadMedicoPort,
-                            ObtenerOCrearPacientePort obtenerOCrearPacientePort,
-                            CrearCitaPort crearCitaPort,
-                            BuscarCitasPort buscarCitasPort,
-                            PublicarCitaCreadaEventPort publicarCitaCreadaEventPort) {
+    public CrearCitaService(
+            BuscarMedicoPort buscarMedicoPort,
+            BuscarDisponibilidadMedicoPort buscarDisponibilidadMedicoPort,
+            ObtenerOCrearPacientePort obtenerOCrearPacientePort,
+            CrearCitaPort crearCitaPort,
+            BuscarCitasPort buscarCitasPort,
+            PublicarCitaCreadaEventPort publicarCitaCreadaEventPort,
+            DbiiSincronizacionService dbiiSincronizacionService
+    ) {
         this.buscarMedicoPort = buscarMedicoPort;
         this.buscarDisponibilidadMedicoPort = buscarDisponibilidadMedicoPort;
         this.obtenerOCrearPacientePort = obtenerOCrearPacientePort;
         this.crearCitaPort = crearCitaPort;
         this.buscarCitasPort = buscarCitasPort;
         this.publicarCitaCreadaEventPort = publicarCitaCreadaEventPort;
+        this.dbiiSincronizacionService = dbiiSincronizacionService;
     }
 
     @Override
@@ -82,7 +87,7 @@ public class CrearCitaService implements CrearCitaUseCase {
         Medico medico = buscarMedicoPort.buscarPorId(command.getMedicoId())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "No existe un médico/terapista con id: " + command.getMedicoId()
+                        "No existe un medico/terapista con id: " + command.getMedicoId()
                 ));
 
         validarDisponibilidadConfigurada(medico, command);
@@ -111,6 +116,8 @@ public class CrearCitaService implements CrearCitaUseCase {
                     command.getHora(),
                     normalizarTextoOpcional(command.getObservacion())
             );
+
+            dbiiSincronizacionService.sincronizarPacienteYCita(citaCreada);
 
             publicarEventoCitaCreada(citaCreada);
 
@@ -150,21 +157,21 @@ public class CrearCitaService implements CrearCitaUseCase {
         if (command == null) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "La solicitud no puede estar vacía."
+                    "La solicitud no puede estar vacia."
             );
         }
 
-        validarTextoObligatorio(command.getNumeroDocumento(), "El número de documento es obligatorio.");
+        validarTextoObligatorio(command.getNumeroDocumento(), "El numero de documento es obligatorio.");
         validarTextoObligatorio(command.getTipoDocumento(), "El tipo de documento es obligatorio.");
         validarTextoObligatorio(command.getNombres(), "Los nombres son obligatorios.");
         validarTextoObligatorio(command.getApellidos(), "Los apellidos son obligatorios.");
         validarTextoObligatorio(command.getCelular(), "El celular es obligatorio.");
-        validarTextoObligatorio(command.getGenero(), "El género es obligatorio.");
+        validarTextoObligatorio(command.getGenero(), "El genero es obligatorio.");
 
         if (command.getMedicoId() == null) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "El médico/terapista es obligatorio."
+                    "El medico/terapista es obligatorio."
             );
         }
 
@@ -197,7 +204,7 @@ public class CrearCitaService implements CrearCitaUseCase {
         if (FESTIVOS_COLOMBIA_2026.contains(fecha)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "No se puede agendar una cita en día festivo en Colombia."
+                    "No se puede agendar una cita en dia festivo en Colombia."
             );
         }
     }
@@ -209,7 +216,7 @@ public class CrearCitaService implements CrearCitaUseCase {
                 .buscarDisponibilidadActiva(medico, diaSemana)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
-                        "El médico/terapista no tiene disponibilidad configurada para el día seleccionado."
+                        "El medico/terapista no tiene disponibilidad configurada para el dia seleccionado."
                 ));
 
         validarFechaDentroDeVentana(command.getFecha(), disponibilidad);
@@ -246,7 +253,7 @@ public class CrearCitaService implements CrearCitaUseCase {
         if (disponibilidad.getHoraInicio() == null || disponibilidad.getHoraFin() == null) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "La disponibilidad del médico/terapista está incompleta."
+                    "La disponibilidad del medico/terapista esta incompleta."
             );
         }
 
@@ -254,7 +261,7 @@ public class CrearCitaService implements CrearCitaUseCase {
                 || !command.getHora().isBefore(disponibilidad.getHoraFin())) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "La hora seleccionada está fuera de la franja configurada para el médico/terapista."
+                    "La hora seleccionada esta fuera de la franja configurada para el medico/terapista."
             );
         }
     }
@@ -263,7 +270,7 @@ public class CrearCitaService implements CrearCitaUseCase {
         if (disponibilidad.getIntervaloMinutos() == null || disponibilidad.getIntervaloMinutos() <= 0) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "El intervalo de atención del médico/terapista no está configurado correctamente."
+                    "El intervalo de atencion del medico/terapista no esta configurado correctamente."
             );
         }
 
@@ -296,8 +303,8 @@ public class CrearCitaService implements CrearCitaUseCase {
         if (tieneCitaActiva) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "El paciente ya tiene una cita agendada o pendiente. " +
-                            "No puede crear una nueva cita hasta que la cita actual sea atendida, cancelada o marcada como no asistida."
+                    "El paciente ya tiene una cita agendada o pendiente. "
+                            + "No puede crear una nueva cita hasta que la cita actual sea atendida, cancelada o marcada como no asistida."
             );
         }
     }
@@ -366,7 +373,7 @@ public class CrearCitaService implements CrearCitaUseCase {
         } catch (Exception ex) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Género inválido. Valores permitidos: HOMBRE, MUJER, OTRO."
+                    "Genero invalido. Valores permitidos: HOMBRE, MUJER, OTRO."
             );
         }
     }
