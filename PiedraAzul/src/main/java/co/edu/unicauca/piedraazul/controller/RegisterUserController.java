@@ -14,7 +14,6 @@ import co.edu.unicauca.piedraazul.service.IUserService;
 import co.edu.unicauca.piedraazul.util.DatePickerUtils;
 import co.edu.unicauca.piedraazul.util.SceneManager;
 import co.edu.unicauca.piedraazul.util.Vista;
-
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -49,9 +48,11 @@ public class RegisterUserController implements Observer {
 
     private UserRole selectedRole = UserRole.ADMIN;
 
-    public RegisterUserController(IUserService userService,
-                                  IPacienteService pacienteService,
-                                  SceneManager sceneManager) {
+    public RegisterUserController(
+            IUserService userService,
+            IPacienteService pacienteService,
+            SceneManager sceneManager
+    ) {
         this.userService = userService;
         this.pacienteService = pacienteService;
         this.sceneManager = sceneManager;
@@ -118,40 +119,80 @@ public class RegisterUserController implements Observer {
                 ? documentTypeCombo.getValue()
                 : null;
 
-        if (primerNombre.isEmpty() ||
-                primerApellido.isEmpty() ||
-                usuario.isEmpty() ||
-                tipoDocumento == null ||
-                tipoDocumento.trim().isEmpty() ||
-                numeroDocumento.isEmpty() ||
-                contrasena.isEmpty() ||
-                confirmarContrasena.isEmpty()) {
+        if (primerNombre.isEmpty()
+                || primerApellido.isEmpty()
+                || usuario.isEmpty()
+                || tipoDocumento == null
+                || tipoDocumento.trim().isEmpty()
+                || numeroDocumento.isEmpty()
+                || contrasena.isEmpty()
+                || confirmarContrasena.isEmpty()) {
 
-            showAlert(Alert.AlertType.WARNING,
+            showAlert(
+                    Alert.AlertType.WARNING,
                     "Campos obligatorios",
-                    "Debe completar todos los campos marcados con *.");
+                    "Debe completar todos los campos marcados con *."
+            );
             return;
         }
 
         if (!contrasena.equals(confirmarContrasena)) {
-            showAlert(Alert.AlertType.ERROR,
+            showAlert(
+                    Alert.AlertType.ERROR,
                     "Validación",
-                    "Las contraseñas no coinciden.");
+                    "Las contraseñas no coinciden."
+            );
             return;
         }
 
         if (contrasena.length() < 6) {
-            showAlert(Alert.AlertType.WARNING,
+            showAlert(
+                    Alert.AlertType.WARNING,
                     "Contraseña débil",
-                    "La contraseña debe tener mínimo 6 caracteres.");
+                    "La contraseña debe tener mínimo 6 caracteres."
+            );
             return;
+        }
+
+        if (selectedRole == UserRole.PACIENTE) {
+            if (celular.isEmpty() || !celular.matches("\\d{10}")) {
+                showAlert(
+                        Alert.AlertType.WARNING,
+                        "Celular inválido",
+                        "Para registrar un paciente, el celular debe tener exactamente 10 dígitos numéricos."
+                );
+                return;
+            }
         }
 
         User user = UsuarioFactory.crearUsuario(usuario, contrasena, selectedRole);
 
         boolean registrado = userService.registerUser(user, this);
 
-        if (registrado) {
+        if (!registrado) {
+            showAlert(
+                    Alert.AlertType.ERROR,
+                    "Registro fallido",
+                    "El usuario ya existe o no pudo registrarse."
+            );
+            return;
+        }
+
+        try {
+            /*
+             * Punto clave:
+             * Después de registrar el usuario, autenticamos automáticamente.
+             * Esto llena el accessToken en AgendaServiceClient.
+             * Así el PUT /api/pacientes/perfil ya no falla con 401.
+             */
+            User usuarioAutenticado = userService.authenticate(usuario, contrasena);
+
+            if (usuarioAutenticado == null) {
+                throw new IllegalStateException(
+                        "El usuario fue creado, pero no se pudo autenticar automáticamente para guardar el perfil."
+                );
+            }
+
             if (selectedRole == UserRole.PACIENTE) {
                 guardarPerfilPaciente(
                         usuario,
@@ -165,54 +206,54 @@ public class RegisterUserController implements Observer {
                 );
             }
 
-            showAlert(Alert.AlertType.INFORMATION,
+            showAlert(
+                    Alert.AlertType.INFORMATION,
                     "Registro exitoso",
-                    "El usuario fue registrado correctamente.");
+                    "El usuario fue registrado correctamente y sus datos fueron sincronizados."
+            );
 
             clearForm();
+            sceneManager.switchScene(Vista.LOGIN);
 
-        } else {
-            showAlert(Alert.AlertType.ERROR,
-                    "Registro fallido",
-                    "El usuario ya existe o no pudo registrarse.");
+        } catch (Exception e) {
+            showAlert(
+                    Alert.AlertType.ERROR,
+                    "Registro incompleto",
+                    "El usuario fue creado, pero no se pudo guardar/sincronizar el perfil del paciente. Detalle: "
+                            + obtenerMensajeError(e)
+            );
+
+            System.err.println("REGISTER-USER-CONTROLLER -> Usuario creado, pero no se pudo guardar perfil paciente.");
+            System.err.println("REGISTER-USER-CONTROLLER -> Detalle: " + e.getMessage());
         }
     }
 
-    private void guardarPerfilPaciente(String usuario,
-                                   String numeroDocumento,
-                                   String tipoDocumento,
-                                   String primerNombre,
-                                   String segundoNombre,
-                                   String primerApellido,
-                                   String segundoApellido,
-                                   String celular) {
+    private void guardarPerfilPaciente(
+            String usuario,
+            String numeroDocumento,
+            String tipoDocumento,
+            String primerNombre,
+            String segundoNombre,
+            String primerApellido,
+            String segundoApellido,
+            String celular
+    ) {
+        String nombresCompletos = unirNombres(primerNombre, segundoNombre);
+        String apellidosCompletos = unirNombres(primerApellido, segundoApellido);
 
-    String nombresCompletos = unirNombres(primerNombre, segundoNombre);
-    String apellidosCompletos = unirNombres(primerApellido, segundoApellido);
-
-    try {
         pacienteService.obtenerOCrearPaciente(
                 usuario,
                 numeroDocumento,
                 normalizarTipoDocumento(tipoDocumento),
                 nombresCompletos,
                 apellidosCompletos,
-                celular.isEmpty() ? "Sin celular" : celular,
+                celular,
                 Genero.OTRO,
                 birthDatePicker != null ? birthDatePicker.getValue() : null,
-                usuario + "@example.com"
+                construirCorreoPaciente(usuario)
         );
-
-    } catch (Exception e) {
-        /*
-         * No se muestra alerta al usuario porque el registro de usuario fue exitoso.
-         * Si el perfil no se pudo crear automáticamente, el paciente podrá completar
-         * sus datos personales al iniciar sesión desde el panel paciente.
-         */
-        System.err.println("REGISTER-USER-CONTROLLER -> Usuario creado, pero no se pudo guardar perfil paciente automáticamente.");
-        System.err.println("REGISTER-USER-CONTROLLER -> Detalle: " + e.getMessage());
     }
-}
+
     @FXML
     private void clearForm() {
         clearIfNotNull(firstNameField);
@@ -351,6 +392,26 @@ public class RegisterUserController implements Observer {
             case "Pasaporte" -> "PASAPORTE";
             default -> tipoDocumento;
         };
+    }
+
+    private String construirCorreoPaciente(String usuario) {
+        String usuarioLimpio = usuario == null
+                ? "paciente"
+                : usuario.toLowerCase().replaceAll("[^a-z0-9._-]", "");
+
+        if (usuarioLimpio.isBlank()) {
+            usuarioLimpio = "paciente";
+        }
+
+        return usuarioLimpio + "@piedraazul.local";
+    }
+
+    private String obtenerMensajeError(Exception e) {
+        if (e == null || e.getMessage() == null || e.getMessage().trim().isEmpty()) {
+            return "Error desconocido.";
+        }
+
+        return e.getMessage();
     }
 
     private void clearIfNotNull(TextField field) {

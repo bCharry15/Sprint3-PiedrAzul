@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import co.edu.unicauca.piedraazul.agenda.application.usecase.DbiiSincronizacionService;
 import co.edu.unicauca.piedraazul.agenda.model.Paciente;
 import co.edu.unicauca.piedraazul.agenda.model.enums.Genero;
 import co.edu.unicauca.piedraazul.agenda.repository.PacienteRepository;
@@ -21,9 +22,14 @@ import co.edu.unicauca.piedraazul.agenda.repository.PacienteRepository;
 public class PacienteRestController {
 
     private final PacienteRepository pacienteRepository;
+    private final DbiiSincronizacionService dbiiSincronizacionService;
 
-    public PacienteRestController(PacienteRepository pacienteRepository) {
+    public PacienteRestController(
+            PacienteRepository pacienteRepository,
+            DbiiSincronizacionService dbiiSincronizacionService
+    ) {
         this.pacienteRepository = pacienteRepository;
+        this.dbiiSincronizacionService = dbiiSincronizacionService;
     }
 
     @GetMapping("/api/pacientes/perfil/{username}")
@@ -54,12 +60,13 @@ public class PacienteRestController {
         String correo = obtenerTextoOpcional(body, "correo");
 
         validarTexto(username, "El username es obligatorio.");
-        validarTexto(numeroDocumento, "El número de documento es obligatorio.");
+        validarTexto(numeroDocumento, "El numero de documento es obligatorio.");
         validarTexto(tipoDocumento, "El tipo de documento es obligatorio.");
         validarTexto(nombres, "Los nombres son obligatorios.");
         validarTexto(apellidos, "Los apellidos son obligatorios.");
         validarTexto(celular, "El celular es obligatorio.");
-        validarTexto(generoTexto, "El género es obligatorio.");
+        validarTexto(generoTexto, "El genero es obligatorio.");
+        validarCelular(celular);
 
         username = username.trim();
         numeroDocumento = numeroDocumento.trim();
@@ -75,7 +82,7 @@ public class PacienteRestController {
                 && !pacientePorDocumento.getId().equals(pacientePorUsername.getId())) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "El número de documento ya está asociado a otro perfil de paciente."
+                    "El numero de documento ya esta asociado a otro perfil de paciente."
             );
         }
 
@@ -86,7 +93,7 @@ public class PacienteRestController {
                 && !pacientePorDocumento.getUsername().equalsIgnoreCase(username)) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "El número de documento ya está asociado a otro usuario."
+                    "El numero de documento ya esta asociado a otro usuario."
             );
         }
 
@@ -100,15 +107,17 @@ public class PacienteRestController {
 
         paciente.setUsername(username);
         paciente.setNumeroDocumento(numeroDocumento);
-        paciente.setTipoDocumento(tipoDocumento.trim());
+        paciente.setTipoDocumento(normalizarTipoDocumento(tipoDocumento));
         paciente.setNombres(normalizarNombre(nombres));
         paciente.setApellidos(normalizarNombre(apellidos));
         paciente.setCelular(celular.trim());
         paciente.setGenero(convertirGenero(generoTexto));
         paciente.setFechaNacimiento(convertirFecha(fechaNacimientoTexto));
-        paciente.setCorreo(normalizarCorreo(correo));
+        paciente.setCorreo(normalizarCorreo(correo, username));
 
         Paciente guardado = pacienteRepository.save(paciente);
+
+        dbiiSincronizacionService.sincronizarPacienteDesdePerfil(guardado);
 
         return convertirPacienteAResponse(guardado);
     }
@@ -158,20 +167,29 @@ public class PacienteRestController {
         }
     }
 
+    private void validarCelular(String celular) {
+        if (celular == null || !celular.trim().matches("\\d{10}")) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El celular debe contener exactamente 10 digitos numericos."
+            );
+        }
+    }
+
     private Genero convertirGenero(String genero) {
         try {
             return Genero.valueOf(genero.trim().toUpperCase());
         } catch (Exception e) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Género inválido. Valores permitidos: HOMBRE, MUJER, OTRO."
+                    "Genero invalido. Valores permitidos: HOMBRE, MUJER, OTRO."
             );
         }
     }
 
     private LocalDate convertirFecha(String fecha) {
         if (fecha == null || fecha.trim().isEmpty()) {
-            return null;
+            return LocalDate.of(2000, 1, 1);
         }
 
         try {
@@ -182,6 +200,20 @@ public class PacienteRestController {
                     "La fecha de nacimiento debe tener formato yyyy-MM-dd."
             );
         }
+    }
+
+    private String normalizarTipoDocumento(String tipoDocumento) {
+        if (tipoDocumento == null || tipoDocumento.isBlank()) {
+            return "CC";
+        }
+
+        return switch (tipoDocumento.trim().toUpperCase()) {
+            case "CEDULA DE CIUDADANIA", "CEDULA DE CIUDADANÍA", "CC" -> "CC";
+            case "TARJETA DE IDENTIDAD", "TI" -> "TI";
+            case "CEDULA DE EXTRANJERIA", "CEDULA DE EXTRANJERÍA", "CE" -> "CE";
+            case "PASAPORTE" -> "PASAPORTE";
+            default -> tipoDocumento.trim();
+        };
     }
 
     private String normalizarNombre(String valor) {
@@ -215,11 +247,19 @@ public class PacienteRestController {
         return resultado.toString().trim();
     }
 
-    private String normalizarCorreo(String correo) {
-        if (correo == null || correo.trim().isEmpty()) {
-            return null;
+    private String normalizarCorreo(String correo, String username) {
+        if (correo != null && !correo.trim().isEmpty()) {
+            return correo.trim().toLowerCase();
         }
 
-        return correo.trim().toLowerCase();
+        String usuarioLimpio = username == null
+                ? "paciente"
+                : username.toLowerCase().replaceAll("[^a-z0-9._-]", "");
+
+        if (usuarioLimpio.isBlank()) {
+            usuarioLimpio = "paciente";
+        }
+
+        return usuarioLimpio + "@piedraazul.local";
     }
 }

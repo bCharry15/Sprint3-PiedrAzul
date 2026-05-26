@@ -295,6 +295,30 @@ public class DbiiSincronizacionService {
                 + idCitaGenerada);
     }
 
+    public Long sincronizarPacienteDesdePerfil(Paciente paciente) {
+    if (paciente == null) {
+        throw new IllegalArgumentException("El paciente es obligatorio para sincronizar con PACIENTE DBII.");
+    }
+
+    Long idPacienteDbii = sincronizarPaciente(paciente);
+
+    Long idUsuarioSistema = null;
+
+    if (paciente.getUsername() != null && !paciente.getUsername().trim().isEmpty()) {
+        idUsuarioSistema = obtenerIdUsuarioSistema(paciente.getUsername().trim());
+    }
+
+    registrarAuditoriaUsuario(
+            idUsuarioSistema,
+            "SINCRONIZAR_PACIENTE",
+            "Paciente sincronizado desde registro/perfil. Documento: " + paciente.getNumeroDocumento()
+    );
+
+    System.out.println("DBII-SYNC -> Paciente sincronizado desde perfil en PACIENTE. ID: " + idPacienteDbii);
+
+    return idPacienteDbii;
+}
+
     private Long sincronizarPaciente(Paciente paciente) {
         validarTexto(paciente.getNumeroDocumento(), "El numero de documento del paciente es obligatorio.");
         validarTexto(paciente.getTipoDocumento(), "El tipo de documento del paciente es obligatorio.");
