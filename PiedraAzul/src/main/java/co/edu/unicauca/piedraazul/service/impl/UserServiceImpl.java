@@ -30,17 +30,43 @@ public class UserServiceImpl extends Subject implements IUserService {
     @Override
     public boolean registerUser(User user) {
         try {
+            if (user == null) {
+                notifyObservers("Registro fallido: el usuario no puede estar vacío.");
+                return false;
+            }
+
+            if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
+                notifyObservers("Registro fallido: el nombre de usuario es obligatorio.");
+                return false;
+            }
+
+            if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
+                notifyObservers("Registro fallido: la contraseña es obligatoria.");
+                return false;
+            }
+
+            if (user.getRole() == null) {
+                notifyObservers("Registro fallido: el rol es obligatorio.");
+                return false;
+            }
+
             agendaServiceClient.registrarUsuario(
-                    user.getUsername(),
+                    user.getUsername().trim(),
                     user.getPassword(),
                     user.getRole().name()
             );
 
-            notifyObservers("Usuario registrado: " + user.getUsername());
+            notifyObservers("Usuario registrado correctamente: " + user.getUsername().trim());
             return true;
 
         } catch (Exception e) {
-            notifyObservers("Registro fallido: " + user.getUsername());
+            String detalle = e.getMessage();
+
+            if (detalle == null || detalle.trim().isEmpty()) {
+                detalle = "El usuario ya existe o no pudo registrarse.";
+            }
+
+            notifyObservers("Registro fallido: " + detalle);
             return false;
         }
     }

@@ -31,12 +31,19 @@ public class CitaServiceImpl implements ICitaService {
                           LocalTime hora, String observacion) {
 
         CrearCitaRequest request = new CrearCitaRequest();
+
         request.setNumeroDocumento(paciente.getNumeroDocumento());
         request.setTipoDocumento(paciente.getTipoDocumento());
         request.setNombres(paciente.getNombres());
         request.setApellidos(paciente.getApellidos());
         request.setCelular(paciente.getCelular());
-        request.setGenero(paciente.getGenero() != null ? paciente.getGenero().name() : Genero.OTRO.name());
+
+        if (paciente.getGenero() != null) {
+            request.setGenero(paciente.getGenero().name());
+        } else {
+            request.setGenero(Genero.OTRO.name());
+        }
+
         request.setFechaNacimiento(paciente.getFechaNacimiento());
         request.setCorreo(paciente.getCorreo());
 
@@ -77,12 +84,26 @@ public class CitaServiceImpl implements ICitaService {
         return response.getCantidad();
     }
 
+    @Override
+    public Cita cambiarEstadoCita(Long citaId, String estado, String observacion) {
+        CitaResponse response = agendaServiceClient.cambiarEstadoCita(citaId, estado, observacion);
+
+        Medico medico = new Medico();
+
+        if (response != null && response.getMedicoId() != null) {
+            medico.setId(response.getMedicoId());
+        }
+
+        return convertirACita(response, null, medico);
+    }
+
     private Cita convertirACita(CitaResponse response, Paciente paciente, Medico medico) {
         if (response == null) {
             return null;
         }
 
         Cita cita = new Cita();
+
         cita.setId(response.getId());
 
         Paciente pacienteConvertido = paciente;
@@ -94,7 +115,7 @@ public class CitaServiceImpl implements ICitaService {
                 pacienteConvertido.setId(response.getPacienteId());
             }
 
-            if (response.getPaciente() != null) {
+            if (response.getPaciente() != null && !response.getPaciente().trim().isEmpty()) {
                 pacienteConvertido.setNombres(response.getPaciente());
                 pacienteConvertido.setApellidos("");
             } else {
@@ -102,7 +123,19 @@ public class CitaServiceImpl implements ICitaService {
                 pacienteConvertido.setApellidos("");
             }
 
-            pacienteConvertido.setNumeroDocumento("");
+            if (response.getDocumento() != null) {
+                pacienteConvertido.setNumeroDocumento(response.getDocumento());
+            } else {
+                pacienteConvertido.setNumeroDocumento("");
+            }
+        }
+
+        if (medico == null) {
+            medico = new Medico();
+
+            if (response.getMedicoId() != null) {
+                medico.setId(response.getMedicoId());
+            }
         }
 
         cita.setPaciente(pacienteConvertido);
@@ -110,13 +143,21 @@ public class CitaServiceImpl implements ICitaService {
         cita.setFecha(response.getFecha());
         cita.setHora(response.getHora());
         cita.setObservacion(response.getObservacion());
-
-        if (response.getEstado() != null) {
-            cita.setEstado(EstadoCita.valueOf(response.getEstado()));
-        } else {
-            cita.setEstado(EstadoCita.PROGRAMADA);
-        }
+        cita.setEstado(convertirEstadoSeguro(response.getEstado()));
 
         return cita;
+    }
+
+    private EstadoCita convertirEstadoSeguro(String estado) {
+        if (estado == null || estado.trim().isEmpty()) {
+            return EstadoCita.PROGRAMADA;
+        }
+
+        try {
+            return EstadoCita.valueOf(estado.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            System.err.println("Estado de cita no reconocido desde backend: " + estado);
+            return EstadoCita.PROGRAMADA;
+        }
     }
 }

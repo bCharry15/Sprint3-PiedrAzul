@@ -7,15 +7,15 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Priority?>
 <?import javafx.scene.layout.Region?>
-<?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx/17"
@@ -23,7 +23,6 @@
             fx:controller="co.edu.unicauca.piedraazul.controller.PacientePanelController"
             style="-fx-background-color: #f4f6f8;">
 
-    <!-- Menú lateral -->
     <left>
         <VBox spacing="15"
               prefWidth="240"
@@ -44,20 +43,19 @@
             <Label text="Agendamiento autónomo"
                    style="-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;"/>
 
-            <Label text="Consulta médicos, revisa franjas disponibles y agenda tu cita sin usar WhatsApp."
+            <Label text="Consulta médicos, revisa franjas disponibles, agenda tu cita y consulta tu historial."
                    wrapText="true"
                    style="-fx-text-fill: #d6e4ef; -fx-font-size: 12px;"/>
 
-            <Region VBox.vgrow="ALWAYS"/>
+            <Region minHeight="24" prefHeight="32" maxHeight="40"/>
 
             <Button text="Cerrar sesión"
                     maxWidth="Infinity"
                     onAction="#logout"
-                    style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                    style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-pref-height: 42;"/>
         </VBox>
     </left>
 
-    <!-- Contenido principal -->
     <center>
         <ScrollPane fitToWidth="true"
                     style="-fx-background: transparent; -fx-background-color: transparent;">
@@ -71,17 +69,38 @@
                         <Label text="Agendamiento autónomo de citas"
                                style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #1f2d3d;"/>
 
-                        <Label text="Completa tus datos, selecciona un médico/terapista, consulta las franjas disponibles y confirma tu cita."
+                        <Label text="Consulta tus datos personales, selecciona un médico/terapista, revisa disponibilidad, confirma tu cita y consulta tu historial."
                                wrapText="true"
                                style="-fx-font-size: 14px; -fx-text-fill: #5d6d7e;"/>
                     </VBox>
 
-                    <!-- Datos del paciente -->
                     <VBox spacing="12"
                           style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 22; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 8, 0, 0, 2);">
 
-                        <Label text="Datos del paciente"
-                               style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1f2d3d;"/>
+                        <HBox spacing="12">
+                            <VBox spacing="4">
+                                <Label text="Datos del paciente"
+                                       style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1f2d3d;"/>
+
+                                <Label text="Estos datos pertenecen a su perfil. Para modificarlos use la opción Editar perfil."
+                                       style="-fx-font-size: 12px; -fx-text-fill: #64748b;"/>
+                            </VBox>
+
+                            <Region HBox.hgrow="ALWAYS"/>
+
+                            <Button fx:id="btnEditarPerfil"
+                                    text="Editar perfil"
+                                    onAction="#editarPerfil"
+                                    prefWidth="130"
+                                    style="-fx-background-color: #34495e; -fx-text-fill: white; -fx-font-weight: bold;"/>
+
+                            <Button fx:id="btnGuardarPerfil"
+                                    text="Guardar perfil"
+                                    onAction="#guardarPerfil"
+                                    prefWidth="130"
+                                    disable="true"
+                                    style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                        </HBox>
 
                         <GridPane hgap="15" vgap="14">
                             <columnConstraints>
@@ -141,7 +160,6 @@
                         </GridPane>
                     </VBox>
 
-                    <!-- Datos de la cita -->
                     <VBox spacing="12"
                           style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 22; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 8, 0, 0, 2);">
 
@@ -201,6 +219,50 @@
                                     prefWidth="180"
                                     style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;"/>
                         </HBox>
+                    </VBox>
+
+                    <VBox spacing="12"
+                          style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 22; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.10), 8, 0, 0, 2);">
+
+                        <HBox spacing="12">
+                            <Label text="Mis citas"
+                                   style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1f2d3d;"/>
+
+                            <Region HBox.hgrow="ALWAYS"/>
+
+                            <Button text="Consultar mis citas"
+                                    onAction="#consultarMisCitas"
+                                    prefWidth="180"
+                                    style="-fx-background-color: #8e44ad; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                        </HBox>
+
+                        <Label text="Cita pendiente o agendada"
+                               style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1f2d3d;"/>
+
+                        <TableView fx:id="tablaCitaPendiente" prefHeight="150">
+                            <columns>
+                                <TableColumn fx:id="pendienteIdColumn" text="ID" prefWidth="60"/>
+                                <TableColumn fx:id="pendienteMedicoColumn" text="Médico" prefWidth="220"/>
+                                <TableColumn fx:id="pendienteFechaColumn" text="Fecha" prefWidth="120"/>
+                                <TableColumn fx:id="pendienteHoraColumn" text="Hora" prefWidth="100"/>
+                                <TableColumn fx:id="pendienteEstadoColumn" text="Estado" prefWidth="120"/>
+                                <TableColumn fx:id="pendienteObservacionColumn" text="Observación" prefWidth="350"/>
+                            </columns>
+                        </TableView>
+
+                        <Label text="Historial de citas"
+                               style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1f2d3d;"/>
+
+                        <TableView fx:id="tablaHistorialCitas" prefHeight="220">
+                            <columns>
+                                <TableColumn fx:id="historialIdColumn" text="ID" prefWidth="60"/>
+                                <TableColumn fx:id="historialMedicoColumn" text="Médico" prefWidth="220"/>
+                                <TableColumn fx:id="historialFechaColumn" text="Fecha" prefWidth="120"/>
+                                <TableColumn fx:id="historialHoraColumn" text="Hora" prefWidth="100"/>
+                                <TableColumn fx:id="historialEstadoColumn" text="Estado" prefWidth="120"/>
+                                <TableColumn fx:id="historialObservacionColumn" text="Observación" prefWidth="350"/>
+                            </columns>
+                        </TableView>
                     </VBox>
 
                     <Label text="* Campos obligatorios"

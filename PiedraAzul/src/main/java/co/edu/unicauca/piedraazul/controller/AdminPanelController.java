@@ -4,6 +4,7 @@ import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientResponseException;
@@ -23,6 +24,7 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -37,22 +39,19 @@ import javafx.util.StringConverter;
 @Component
 public class AdminPanelController {
 
-    // ── Navegación ────────────────────────────────────────────────────────────
     @FXML private Button gestionMedicosButton;
     @FXML private Button gestionAgendadoresButton;
-    @FXML private Label  tituloSeccionLabel;
-    @FXML private Label  subtituloSeccionLabel;
-    @FXML private VBox   gestionMedicosSection;
-    @FXML private VBox   gestionAgendadoresSection;
+    @FXML private Label tituloSeccionLabel;
+    @FXML private Label subtituloSeccionLabel;
+    @FXML private VBox gestionMedicosSection;
+    @FXML private VBox gestionAgendadoresSection;
 
-    // ── Formulario médico ─────────────────────────────────────────────────────
-    @FXML private TextField     nombreCompletoField;
-    @FXML private TextField     especialidadField;
-    @FXML private TextField     intervaloField;
-    @FXML private TextField     usernameField;
+    @FXML private TextField nombreCompletoField;
+    @FXML private TextField especialidadField;
+    @FXML private TextField intervaloField;
+    @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
 
-    // ── Formulario disponibilidad médico ──────────────────────────────────────
     @FXML private ComboBox<MedicoTablaModel> disponibilidadMedicoCombo;
     @FXML private ComboBox<DayOfWeek> diaSemanaCombo;
     @FXML private TextField horaInicioField;
@@ -60,30 +59,28 @@ public class AdminPanelController {
     @FXML private TextField intervaloDisponibilidadField;
     @FXML private TextField ventanaSemanasField;
 
-    // ── Formulario agendador ──────────────────────────────────────────────────
-    @FXML private TextField     agendadorUsernameField;
+    @FXML private TextField agendadorUsernameField;
     @FXML private PasswordField agendadorPasswordField;
 
-    // ── Tabla médicos ─────────────────────────────────────────────────────────
-    @FXML private TableView<MedicoTablaModel>              medicosTable;
-    @FXML private TableColumn<MedicoTablaModel, Long>      idColumn;
-    @FXML private TableColumn<MedicoTablaModel, String>    nombreColumn;
-    @FXML private TableColumn<MedicoTablaModel, String>    especialidadColumn;
-    @FXML private TableColumn<MedicoTablaModel, Integer>   intervaloColumn;
-    @FXML private TableColumn<MedicoTablaModel, String>    usernameColumn;
+    @FXML private TableView<MedicoTablaModel> medicosTable;
+    @FXML private TableColumn<MedicoTablaModel, Long> idColumn;
+    @FXML private TableColumn<MedicoTablaModel, String> nombreColumn;
+    @FXML private TableColumn<MedicoTablaModel, String> especialidadColumn;
+    @FXML private TableColumn<MedicoTablaModel, Integer> intervaloColumn;
+    @FXML private TableColumn<MedicoTablaModel, String> usernameColumn;
 
-    // ── Tabla agendadores ─────────────────────────────────────────────────────
-    @FXML private TableView<AgendadorTablaModel>            agendadoresTable;
-    @FXML private TableColumn<AgendadorTablaModel, Long>    agendadorIdColumn;
-    @FXML private TableColumn<AgendadorTablaModel, String>  agendadorUsernameColumn;
-    @FXML private TableColumn<AgendadorTablaModel, String>  agendadorStatusColumn;
-    @FXML private TableColumn<AgendadorTablaModel, String>  agendadorRoleColumn;
+    @FXML private TableView<AgendadorTablaModel> agendadoresTable;
+    @FXML private TableColumn<AgendadorTablaModel, Long> agendadorIdColumn;
+    @FXML private TableColumn<AgendadorTablaModel, String> agendadorUsernameColumn;
+    @FXML private TableColumn<AgendadorTablaModel, String> agendadorStatusColumn;
+    @FXML private TableColumn<AgendadorTablaModel, String> agendadorRoleColumn;
 
-    // ── Dependencias ──────────────────────────────────────────────────────────
     private final SceneManager sceneManager;
     private final AgendaServiceClient agendaServiceClient;
     private final IAgendadorService agendadorService;
     private final UserSession userSession;
+
+    private MedicoTablaModel medicoSeleccionado;
 
     public AdminPanelController(SceneManager sceneManager,
                                 AgendaServiceClient agendaServiceClient,
@@ -94,8 +91,6 @@ public class AdminPanelController {
         this.agendadorService = agendadorService;
         this.userSession = userSession;
     }
-
-    // ── Inicialización ────────────────────────────────────────────────────────
 
     @FXML
     private void initialize() {
@@ -113,6 +108,12 @@ public class AdminPanelController {
         especialidadColumn.setCellValueFactory(new PropertyValueFactory<>("especialidad"));
         intervaloColumn.setCellValueFactory(new PropertyValueFactory<>("intervaloMinutos"));
         usernameColumn.setCellValueFactory(new PropertyValueFactory<>("username"));
+
+        medicosTable.getSelectionModel().selectedItemProperty().addListener((obs, anterior, seleccionado) -> {
+            if (seleccionado != null) {
+                cargarMedicoEnFormulario(seleccionado);
+            }
+        });
     }
 
     private void configurarTablaAgendadores() {
@@ -126,7 +127,7 @@ public class AdminPanelController {
         if (diaSemanaCombo != null) {
             diaSemanaCombo.setItems(FXCollections.observableArrayList(DayOfWeek.values()));
 
-            diaSemanaCombo.setConverter(new StringConverter<DayOfWeek>() {
+            diaSemanaCombo.setConverter(new StringConverter<>() {
                 @Override
                 public String toString(DayOfWeek dia) {
                     return nombreDiaEnEspanol(dia);
@@ -178,8 +179,6 @@ public class AdminPanelController {
         }
     }
 
-    // ── Navegación entre secciones ────────────────────────────────────────────
-
     @FXML
     private void mostrarGestionMedicos() {
         gestionMedicosSection.setVisible(true);
@@ -191,7 +190,7 @@ public class AdminPanelController {
 
         tituloSeccionLabel.setText("Gestión administrativa");
         subtituloSeccionLabel.setText(
-                "Desde este panel el administrador puede registrar, consultar y configurar médicos.");
+                "Desde este panel el administrador puede registrar, editar, eliminar y configurar médicos.");
     }
 
     @FXML
@@ -215,8 +214,6 @@ public class AdminPanelController {
         inactivo.getStyleClass().add("menu-button");
     }
 
-    // ── Acciones médico ───────────────────────────────────────────────────────
-
     @FXML
     private void registrarMedico() {
         try {
@@ -227,17 +224,7 @@ public class AdminPanelController {
             String password = passwordField.getText() == null
                     ? "" : passwordField.getText().trim();
 
-            if (nombreCompleto.isEmpty()) {
-                throw new IllegalArgumentException("Debe ingresar el nombre completo.");
-            }
-
-            if (especialidad.isEmpty()) {
-                throw new IllegalArgumentException("Debe ingresar la especialidad.");
-            }
-
-            if (intervaloTexto.isEmpty()) {
-                throw new IllegalArgumentException("Debe ingresar el intervalo de atención.");
-            }
+            validarFormularioMedico(nombreCompleto, especialidad, intervaloTexto);
 
             if (username.isEmpty()) {
                 throw new IllegalArgumentException("Debe ingresar el nombre de usuario.");
@@ -248,10 +235,6 @@ public class AdminPanelController {
             }
 
             int intervalo = Integer.parseInt(intervaloTexto);
-
-            if (intervalo <= 0) {
-                throw new IllegalArgumentException("El intervalo debe ser mayor que cero.");
-            }
 
             CrearMedicoRequest request = new CrearMedicoRequest(
                     nombreCompleto,
@@ -264,7 +247,7 @@ public class AdminPanelController {
             agendaServiceClient.crearMedico(request);
 
             showAlert(Alert.AlertType.INFORMATION, "Éxito",
-                    "Médico registrado correctamente en agenda-service.");
+                    "Médico registrado correctamente.");
 
             limpiarFormularioMedico();
             cargarMedicos();
@@ -282,18 +265,154 @@ public class AdminPanelController {
 
         } catch (Exception e) {
             showAlert(Alert.AlertType.ERROR, "Error",
-                    "Ocurrió un error al registrar el médico desde agenda-service.");
+                    "Ocurrió un error al registrar el médico: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void actualizarMedico() {
+        try {
+            if (medicoSeleccionado == null) {
+                throw new IllegalArgumentException("Debe seleccionar un médico de la tabla para actualizar.");
+            }
+
+            String nombreCompleto = getText(nombreCompletoField);
+            String especialidad = getText(especialidadField);
+            String intervaloTexto = getText(intervaloField);
+
+            validarFormularioMedico(nombreCompleto, especialidad, intervaloTexto);
+
+            int intervalo = Integer.parseInt(intervaloTexto);
+
+            CrearMedicoRequest request = new CrearMedicoRequest(
+                    nombreCompleto,
+                    especialidad,
+                    intervalo,
+                    medicoSeleccionado.getUsername(),
+                    ""
+            );
+
+            agendaServiceClient.actualizarMedico(medicoSeleccionado.getId(), request);
+
+            showAlert(Alert.AlertType.INFORMATION,
+                    "Médico actualizado",
+                    "El médico fue actualizado correctamente.");
+
+            limpiarFormularioMedico();
+            cargarMedicos();
+
+        } catch (NumberFormatException e) {
+            showAlert(Alert.AlertType.WARNING,
+                    "Validación",
+                    "El intervalo debe ser un número entero.");
+
+        } catch (IllegalArgumentException e) {
+            showAlert(Alert.AlertType.WARNING, "Validación", e.getMessage());
+
+        } catch (Exception e) {
+            showAlert(Alert.AlertType.ERROR,
+                    "Error actualizando médico",
+                    "No se pudo actualizar el médico.\n\nDetalle: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void eliminarMedico() {
+        try {
+            if (medicoSeleccionado == null) {
+                throw new IllegalArgumentException("Debe seleccionar un médico de la tabla para eliminar.");
+            }
+
+            Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmacion.setTitle("Confirmar eliminación");
+            confirmacion.setHeaderText(null);
+            confirmacion.setContentText(
+                    "¿Está seguro de eliminar el médico?\n\n"
+                            + medicoSeleccionado.getNombreCompleto()
+                            + "\n\nSi tiene citas asociadas, el sistema no permitirá eliminarlo."
+            );
+
+            Optional<ButtonType> resultado = confirmacion.showAndWait();
+
+            if (resultado.isEmpty() || resultado.get() != ButtonType.OK) {
+                return;
+            }
+
+            agendaServiceClient.eliminarMedico(medicoSeleccionado.getId());
+
+            showAlert(Alert.AlertType.INFORMATION,
+                    "Médico eliminado",
+                    "El médico fue eliminado correctamente.");
+
+            limpiarFormularioMedico();
+            cargarMedicos();
+
+        } catch (IllegalArgumentException e) {
+            showAlert(Alert.AlertType.WARNING, "Validación", e.getMessage());
+
+        } catch (Exception e) {
+            showAlert(Alert.AlertType.ERROR,
+                    "No se pudo eliminar",
+                    "No se pudo eliminar el médico.\n\nDetalle: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     @FXML
     private void limpiarFormularioMedico() {
+        medicoSeleccionado = null;
+
+        if (medicosTable != null) {
+            medicosTable.getSelectionModel().clearSelection();
+        }
+
         nombreCompletoField.clear();
         especialidadField.clear();
         intervaloField.clear();
         usernameField.clear();
         passwordField.clear();
+
+        usernameField.setDisable(false);
+        passwordField.setDisable(false);
+    }
+
+    private void cargarMedicoEnFormulario(MedicoTablaModel medico) {
+        medicoSeleccionado = medico;
+
+        nombreCompletoField.setText(medico.getNombreCompleto());
+        especialidadField.setText(medico.getEspecialidad());
+        intervaloField.setText(medico.getIntervaloMinutos() == null
+                ? ""
+                : String.valueOf(medico.getIntervaloMinutos()));
+        usernameField.setText(medico.getUsername());
+        passwordField.clear();
+
+        usernameField.setDisable(true);
+        passwordField.setDisable(true);
+    }
+
+    private void validarFormularioMedico(String nombreCompleto,
+                                         String especialidad,
+                                         String intervaloTexto) {
+        if (nombreCompleto.isEmpty()) {
+            throw new IllegalArgumentException("Debe ingresar el nombre completo.");
+        }
+
+        if (especialidad.isEmpty()) {
+            throw new IllegalArgumentException("Debe ingresar la especialidad.");
+        }
+
+        if (intervaloTexto.isEmpty()) {
+            throw new IllegalArgumentException("Debe ingresar el intervalo de atención.");
+        }
+
+        int intervalo = Integer.parseInt(intervaloTexto);
+
+        if (intervalo <= 0) {
+            throw new IllegalArgumentException("El intervalo debe ser mayor que cero.");
+        }
     }
 
     @FXML
@@ -412,8 +531,6 @@ public class AdminPanelController {
         }
     }
 
-    // ── Acciones agendador ────────────────────────────────────────────────────
-
     @FXML
     private void registrarAgendador() {
         try {
@@ -455,8 +572,6 @@ public class AdminPanelController {
         agendadorPasswordField.clear();
     }
 
-    // ── Carga de tablas ───────────────────────────────────────────────────────
-
     private void cargarMedicos() {
         try {
             MedicoResponse[] medicos = agendaServiceClient.listarMedicos();
@@ -495,15 +610,22 @@ public class AdminPanelController {
     }
 
     private void cargarAgendadores() {
-        List<AgendadorTablaModel> filas = agendadorService.listarAgendadores()
-                .stream()
-                .map(this::toAgendadorTablaModel)
-                .toList();
+        try {
+            List<AgendadorTablaModel> filas = agendadorService.listarAgendadores()
+                    .stream()
+                    .map(this::toAgendadorTablaModel)
+                    .toList();
 
-        agendadoresTable.setItems(FXCollections.observableArrayList(filas));
+            agendadoresTable.setItems(FXCollections.observableArrayList(filas));
+
+        } catch (Exception e) {
+            agendadoresTable.setItems(FXCollections.observableArrayList());
+            showAlert(Alert.AlertType.ERROR,
+                    "Error",
+                    "No se pudieron cargar los agendadores desde agenda-service.");
+            e.printStackTrace();
+        }
     }
-
-    // ── Mappers ───────────────────────────────────────────────────────────────
 
     private MedicoTablaModel toMedicoTablaModel(MedicoResponse medico) {
         String username = medico.getUsername() != null ? medico.getUsername() : "";
@@ -521,12 +643,10 @@ public class AdminPanelController {
         return new AgendadorTablaModel(
                 u.getId(),
                 u.getUsername(),
-                u.getStatus().name(),
-                u.getRole().name()
+                u.getStatus() == null ? "ACTIVE" : u.getStatus().name(),
+                u.getRole() == null ? "AGENDADOR" : u.getRole().name()
         );
     }
-
-    // ── Sesión ────────────────────────────────────────────────────────────────
 
     @FXML
     private void volver() {
@@ -539,8 +659,6 @@ public class AdminPanelController {
         userSession.clear();
         sceneManager.switchScene(Vista.LOGIN);
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private String nombreDiaEnEspanol(DayOfWeek dia) {
         if (dia == null) {

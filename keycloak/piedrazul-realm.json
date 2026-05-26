@@ -1,0 +1,100 @@
+{
+  "realm": "PiedrAzul",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      { "name": "ADMIN" },
+      { "name": "AGENDADOR" },
+      { "name": "MEDICO" },
+      { "name": "PACIENTE" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "agenda-service",
+      "name": "agenda-service",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8081/*",
+        "http://localhost:*/*"
+      ],
+      "webOrigins": ["*"]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Admin",
+      "lastName": "PiedraAzul",
+      "email": "admin@test.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["ADMIN"],
+      "requiredActions": []
+    },
+    {
+      "username": "agendador",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Agendador",
+      "lastName": "PiedraAzul",
+      "email": "agendador@test.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "agendador123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["AGENDADOR"],
+      "requiredActions": []
+    },
+    {
+      "username": "medico",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Medico",
+      "lastName": "PiedraAzul",
+      "email": "medico@test.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medico123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["MEDICO"],
+      "requiredActions": []
+    },
+    {
+      "username": "paciente",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "PiedraAzul",
+      "email": "paciente@test.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "paciente123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["PACIENTE"],
+      "requiredActions": []
+    }
+  ]
+}

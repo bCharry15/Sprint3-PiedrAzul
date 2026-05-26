@@ -10,6 +10,7 @@ public class CitaResponseBuilder {
     private Long id;
     private Long pacienteId;
     private String paciente;
+    private String documento;
     private Long medicoId;
     private String medico;
     private LocalDate fecha;
@@ -36,6 +37,11 @@ public class CitaResponseBuilder {
 
     public CitaResponseBuilder paciente(String paciente) {
         this.paciente = paciente;
+        return this;
+    }
+
+    public CitaResponseBuilder documento(String documento) {
+        this.documento = documento;
         return this;
     }
 
@@ -70,16 +76,19 @@ public class CitaResponseBuilder {
     }
 
     public CitaResponse build() {
-        return new CitaResponse(
-                id,
-                pacienteId,
-                paciente,
-                medicoId,
-                medico,
-                fecha,
-                hora,
-                estado,
-                observacion
-        );
+        CitaResponse response = new CitaResponse();
+
+        response.setId(id);
+        response.setPacienteId(pacienteId);
+        response.setPaciente(paciente);
+        response.setDocumento(documento);
+        response.setMedicoId(medicoId);
+        response.setMedico(medico);
+        response.setFecha(fecha);
+        response.setHora(hora);
+        response.setEstado(estado);
+        response.setObservacion(observacion);
+
+        return response;
     }
 }

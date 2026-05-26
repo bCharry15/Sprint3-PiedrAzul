@@ -6,6 +6,7 @@
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
@@ -16,209 +17,347 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
 
-<AnchorPane prefHeight="760.0" prefWidth="1280.0"
+<AnchorPane prefHeight="760.0"
+            prefWidth="1280.0"
             xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="co.edu.unicauca.piedraazul.controller.RegisterUserController"
-            styleClass="dashboard-root">
+            styleClass="register-page-root">
 
     <children>
-        <HBox AnchorPane.topAnchor="35.0"
-              AnchorPane.bottomAnchor="35.0"
-              AnchorPane.leftAnchor="35.0"
-              AnchorPane.rightAnchor="35.0">
+        <HBox AnchorPane.topAnchor="32.0"
+              AnchorPane.bottomAnchor="32.0"
+              AnchorPane.leftAnchor="32.0"
+              AnchorPane.rightAnchor="32.0"
+              spacing="24.0">
 
             <children>
 
-                <VBox prefWidth="270.0"
-                      minWidth="270.0"
-                      maxWidth="270.0"
-                      spacing="18.0"
-                      styleClass="left-register-panel">
-                    <children>
+                <!-- Panel lateral -->
+                <VBox prefWidth="280.0"
+                      minWidth="280.0"
+                      maxWidth="280.0"
+                      spacing="22.0"
+                      styleClass="register-sidebar-card">
 
-                        <HBox spacing="14.0" alignment="CENTER_LEFT">
+                    <children>
+                        <VBox spacing="10.0" alignment="CENTER">
                             <children>
-                                <StackPane minWidth="96.0" minHeight="96.0" prefWidth="96.0" prefHeight="96.0">
+                                <StackPane minWidth="96.0"
+                                           minHeight="96.0"
+                                           prefWidth="96.0"
+                                           prefHeight="96.0">
                                     <children>
                                         <Circle radius="48.0" styleClass="logo-circle"/>
                                         <Label text="❤" styleClass="logo-icon"/>
                                     </children>
                                 </StackPane>
 
-                                <VBox spacing="4.0" alignment="CENTER_LEFT">
+                                <VBox spacing="2.0" alignment="CENTER">
                                     <children>
-                                        <Label text="Piedra..." styleClass="sidebar-title"/>
-                                        <Label text="Citas Médicas" styleClass="sidebar-subtitle"/>
+                                        <Label text="PiedraAzul" styleClass="register-brand-title"/>
+                                        <Label text="Citas Médicas" styleClass="register-brand-subtitle"/>
                                     </children>
                                 </VBox>
                             </children>
-                        </HBox>
+                        </VBox>
 
-                        <VBox spacing="10.0">
+                        <VBox spacing="8.0">
                             <children>
-                                <Label text="¿Cómo desea registrarse?" styleClass="register-title" wrapText="true"/>
-                                <Label text="Seleccione el tipo de perfil que quiere usar para registrarse."
-                                       styleClass="register-subtitle"
+                                <Label text="Crear cuenta"
+                                       styleClass="register-sidebar-heading"
+                                       wrapText="true"/>
+
+                                <Label text="Seleccione el tipo de perfil con el que desea registrarse en el sistema."
+                                       styleClass="register-sidebar-description"
                                        wrapText="true"/>
                             </children>
                         </VBox>
 
                         <VBox spacing="12.0">
                             <children>
-                                <Button text="Como administrador"
+                                <Button fx:id="adminRoleButton"
+                                        text="Como administrador"
                                         onAction="#selectAdminRole"
                                         maxWidth="Infinity"
-                                        styleClass="menu-button-active"/>
+                                        styleClass="register-role-button-active"/>
 
-                                <Button text="Como paciente"
+                                <Button fx:id="patientRoleButton"
+                                        text="Como paciente"
                                         onAction="#selectPatientRole"
                                         maxWidth="Infinity"
-                                        styleClass="menu-button-secondary"/>
+                                        styleClass="register-role-button"/>
                             </children>
                         </VBox>
 
-                        <Region VBox.vgrow="ALWAYS"/>
+                        <VBox spacing="8.0" styleClass="register-help-card">
+                            <children>
+                                <Label text="Recomendación"
+                                       styleClass="register-help-title"/>
+
+                                <Label text="Use datos reales para que el sistema pueda asociar correctamente su perfil y sus citas."
+                                       wrapText="true"
+                                       styleClass="register-help-text"/>
+                            </children>
+                        </VBox>
+
+                        <Region prefHeight="24.0"/>
 
                         <Button text="Volver al login"
                                 onAction="#goToLogin"
                                 maxWidth="Infinity"
-                                styleClass="menu-button-light">
-                            <VBox.margin>
-                                <Insets top="0.0" right="0.0" bottom="10.0" left="0.0"/>
-                            </VBox.margin>
-                        </Button>
-
+                                styleClass="register-back-button"/>
                     </children>
 
                     <padding>
-                        <Insets top="24.0" right="20.0" bottom="24.0" left="20.0"/>
+                        <Insets top="26.0" right="22.0" bottom="26.0" left="22.0"/>
                     </padding>
                 </VBox>
 
+                <!-- Contenido principal -->
                 <VBox HBox.hgrow="ALWAYS"
-                      spacing="18.0"
-                      styleClass="right-register-panel">
+                      spacing="16.0"
+                      styleClass="register-main-card">
+
                     <children>
-
-                        <Label text="Registro de usuario" styleClass="form-title"/>
-
-                        <GridPane hgap="20.0" vgap="14.0">
-                            <columnConstraints>
-                                <ColumnConstraints percentWidth="50.0"/>
-                                <ColumnConstraints percentWidth="50.0"/>
-                            </columnConstraints>
-
+                        <VBox spacing="6.0">
                             <children>
+                                <Label text="Registro de usuario"
+                                       styleClass="register-main-title"/>
 
-                                <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
-                                    <children>
-                                        <Label text="Primer nombre *" styleClass="field-label required-label"/>
-                                        <TextField fx:id="firstNameField" promptText="Ej: Raúl" maxWidth="Infinity"/>
-                                    </children>
-                                </VBox>
-
-                                <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="0">
-                                    <children>
-                                        <Label text="Primer apellido *" styleClass="field-label required-label"/>
-                                        <TextField fx:id="lastNameField" promptText="Ej: Rodríguez" maxWidth="Infinity"/>
-                                    </children>
-                                </VBox>
-
-                                <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="1">
-                                    <children>
-                                        <Label text="Segundo nombre" styleClass="field-label"/>
-                                        <TextField fx:id="secondNameField" promptText="Ej: Andrés" maxWidth="Infinity"/>
-                                    </children>
-                                </VBox>
-
-                                <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
-                                    <children>
-                                        <Label text="Segundo apellido" styleClass="field-label"/>
-                                        <TextField fx:id="secondLastNameField" promptText="Ej: Pérez" maxWidth="Infinity"/>
-                                    </children>
-                                </VBox>
-
-                                <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="2">
-                                    <children>
-                                        <Label text="Usuario *" styleClass="field-label required-label"/>
-                                        <TextField fx:id="usernameField" promptText="usuario123" maxWidth="Infinity"/>
-                                    </children>
-                                </VBox>
-
-                                <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
-                                    <children>
-                                        <Label text="Teléfono" styleClass="field-label"/>
-                                        <TextField fx:id="phoneField" promptText="+57 300 000 0000" maxWidth="Infinity"/>
-                                    </children>
-                                </VBox>
-
-                                <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="3">
-                                    <children>
-                                        <Label text="Fecha de nacimiento" styleClass="field-label"/>
-                                        <DatePicker fx:id="birthDatePicker" maxWidth="Infinity"/>
-                                    </children>
-                                </VBox>
-
-                                <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
-                                    <children>
-                                        <Label text="Tipo de documento *" styleClass="field-label required-label"/>
-                                        <ComboBox fx:id="documentTypeCombo" promptText="Seleccione" maxWidth="Infinity"/>
-                                    </children>
-                                </VBox>
-
-                                <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="4">
-                                    <children>
-                                        <Label text="Número de documento *" styleClass="field-label required-label"/>
-                                        <TextField fx:id="documentNumberField" promptText="Ingrese el número" maxWidth="Infinity"/>
-                                    </children>
-                                </VBox>
-
-                                <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="4">
-                                    <children>
-                                        <Label text="Rol seleccionado" styleClass="field-label"/>
-                                        <TextField fx:id="selectedRoleField" editable="false" maxWidth="Infinity"/>
-                                    </children>
-                                </VBox>
-
-                                <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="5">
-                                    <children>
-                                        <Label text="Contraseña *" styleClass="field-label required-label"/>
-                                        <PasswordField fx:id="passwordField" promptText="Ingrese una contraseña" maxWidth="Infinity"/>
-                                    </children>
-                                </VBox>
-
-                                <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="5">
-                                    <children>
-                                        <Label text="Confirmar contraseña *" styleClass="field-label required-label"/>
-                                        <PasswordField fx:id="confirmPasswordField" promptText="Repita la contraseña" maxWidth="Infinity"/>
-                                    </children>
-                                </VBox>
-
+                                <Label text="Complete la información solicitada. Los campos marcados con * son obligatorios."
+                                       styleClass="register-main-subtitle"
+                                       wrapText="true"/>
                             </children>
-                        </GridPane>
+                        </VBox>
 
-                        <HBox spacing="16.0">
+                        <ScrollPane fitToWidth="true"
+                                    VBox.vgrow="ALWAYS"
+                                    styleClass="register-scroll">
+                            <content>
+                                <VBox spacing="18.0">
+
+                                    <children>
+
+                                        <!-- Sección datos personales -->
+                                        <VBox spacing="12.0" styleClass="register-section-card">
+                                            <children>
+                                                <VBox spacing="2.0">
+                                                    <children>
+                                                        <Label text="Datos personales"
+                                                               styleClass="register-section-title"/>
+
+                                                        <Label text="Información básica de identificación del usuario."
+                                                               styleClass="register-section-subtitle"/>
+                                                    </children>
+                                                </VBox>
+
+                                                <GridPane hgap="18.0" vgap="13.0">
+                                                    <columnConstraints>
+                                                        <ColumnConstraints percentWidth="50.0"/>
+                                                        <ColumnConstraints percentWidth="50.0"/>
+                                                    </columnConstraints>
+
+                                                    <children>
+                                                        <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                                            <children>
+                                                                <Label text="Primer nombre *" styleClass="field-label"/>
+                                                                <TextField fx:id="firstNameField"
+                                                                           promptText="Ej: Raúl"
+                                                                           maxWidth="Infinity"
+                                                                           styleClass="register-input"/>
+                                                            </children>
+                                                        </VBox>
+
+                                                        <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                                            <children>
+                                                                <Label text="Primer apellido *" styleClass="field-label"/>
+                                                                <TextField fx:id="lastNameField"
+                                                                           promptText="Ej: Rodríguez"
+                                                                           maxWidth="Infinity"
+                                                                           styleClass="register-input"/>
+                                                            </children>
+                                                        </VBox>
+
+                                                        <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                                                            <children>
+                                                                <Label text="Segundo nombre" styleClass="field-label"/>
+                                                                <TextField fx:id="secondNameField"
+                                                                           promptText="Ej: Andrés"
+                                                                           maxWidth="Infinity"
+                                                                           styleClass="register-input"/>
+                                                            </children>
+                                                        </VBox>
+
+                                                        <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                                            <children>
+                                                                <Label text="Segundo apellido" styleClass="field-label"/>
+                                                                <TextField fx:id="secondLastNameField"
+                                                                           promptText="Ej: Pérez"
+                                                                           maxWidth="Infinity"
+                                                                           styleClass="register-input"/>
+                                                            </children>
+                                                        </VBox>
+
+                                                        <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                                                            <children>
+                                                                <Label text="Fecha de nacimiento" styleClass="field-label"/>
+                                                                <DatePicker fx:id="birthDatePicker"
+                                                                            promptText="dd/MM/yyyy"
+                                                                            maxWidth="Infinity"
+                                                                            styleClass="register-date-picker"/>
+                                                            </children>
+                                                        </VBox>
+
+                                                        <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                                                            <children>
+                                                                <Label text="Teléfono" styleClass="field-label"/>
+                                                                <TextField fx:id="phoneField"
+                                                                           promptText="+57 300 000 0000"
+                                                                           maxWidth="Infinity"
+                                                                           styleClass="register-input"/>
+                                                            </children>
+                                                        </VBox>
+                                                    </children>
+                                                </GridPane>
+                                            </children>
+                                        </VBox>
+
+                                        <!-- Sección documento -->
+                                        <VBox spacing="12.0" styleClass="register-section-card">
+                                            <children>
+                                                <VBox spacing="2.0">
+                                                    <children>
+                                                        <Label text="Documento de identificación"
+                                                               styleClass="register-section-title"/>
+
+                                                        <Label text="Estos datos permiten asociar el usuario con su historial de citas."
+                                                               styleClass="register-section-subtitle"/>
+                                                    </children>
+                                                </VBox>
+
+                                                <GridPane hgap="18.0" vgap="13.0">
+                                                    <columnConstraints>
+                                                        <ColumnConstraints percentWidth="50.0"/>
+                                                        <ColumnConstraints percentWidth="50.0"/>
+                                                    </columnConstraints>
+
+                                                    <children>
+                                                        <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                                            <children>
+                                                                <Label text="Tipo de documento *" styleClass="field-label"/>
+                                                                <ComboBox fx:id="documentTypeCombo"
+                                                                          promptText="Seleccione"
+                                                                          maxWidth="Infinity"
+                                                                          styleClass="register-combo"/>
+                                                            </children>
+                                                        </VBox>
+
+                                                        <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                                            <children>
+                                                                <Label text="Número de documento *" styleClass="field-label"/>
+                                                                <TextField fx:id="documentNumberField"
+                                                                           promptText="Ingrese el número"
+                                                                           maxWidth="Infinity"
+                                                                           styleClass="register-input"/>
+                                                            </children>
+                                                        </VBox>
+                                                    </children>
+                                                </GridPane>
+                                            </children>
+                                        </VBox>
+
+                                        <!-- Sección cuenta -->
+                                        <VBox spacing="12.0" styleClass="register-section-card">
+                                            <children>
+                                                <VBox spacing="2.0">
+                                                    <children>
+                                                        <Label text="Datos de acceso"
+                                                               styleClass="register-section-title"/>
+
+                                                        <Label text="Defina el usuario, contraseña y rol de acceso."
+                                                               styleClass="register-section-subtitle"/>
+                                                    </children>
+                                                </VBox>
+
+                                                <GridPane hgap="18.0" vgap="13.0">
+                                                    <columnConstraints>
+                                                        <ColumnConstraints percentWidth="50.0"/>
+                                                        <ColumnConstraints percentWidth="50.0"/>
+                                                    </columnConstraints>
+
+                                                    <children>
+                                                        <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                                            <children>
+                                                                <Label text="Usuario *" styleClass="field-label"/>
+                                                                <TextField fx:id="usernameField"
+                                                                           promptText="usuario123"
+                                                                           maxWidth="Infinity"
+                                                                           styleClass="register-input"/>
+                                                            </children>
+                                                        </VBox>
+
+                                                        <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                                            <children>
+                                                                <Label text="Rol seleccionado" styleClass="field-label"/>
+                                                                <TextField fx:id="selectedRoleField"
+                                                                           editable="false"
+                                                                           maxWidth="Infinity"
+                                                                           styleClass="register-input-readonly"/>
+                                                            </children>
+                                                        </VBox>
+
+                                                        <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                                                            <children>
+                                                                <Label text="Contraseña *" styleClass="field-label"/>
+                                                                <PasswordField fx:id="passwordField"
+                                                                               promptText="Ingrese una contraseña"
+                                                                               maxWidth="Infinity"
+                                                                               styleClass="register-input"/>
+                                                            </children>
+                                                        </VBox>
+
+                                                        <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                                            <children>
+                                                                <Label text="Confirmar contraseña *" styleClass="field-label"/>
+                                                                <PasswordField fx:id="confirmPasswordField"
+                                                                               promptText="Repita la contraseña"
+                                                                               maxWidth="Infinity"
+                                                                               styleClass="register-input"/>
+                                                            </children>
+                                                        </VBox>
+                                                    </children>
+                                                </GridPane>
+                                            </children>
+                                        </VBox>
+
+                                    </children>
+                                </VBox>
+                            </content>
+                        </ScrollPane>
+
+                        <HBox spacing="14.0" alignment="CENTER_LEFT">
                             <children>
                                 <Button text="Registrar usuario"
                                         onAction="#register"
-                                        styleClass="content-button"/>
+                                        styleClass="register-primary-button"/>
 
-                                <Button text="Limpiar"
+                                <Button text="Limpiar formulario"
                                         onAction="#clearForm"
-                                        styleClass="secondary-button"/>
+                                        styleClass="register-secondary-button"/>
+
+                                <Region HBox.hgrow="ALWAYS"/>
+
+                                <Label text="* Campos obligatorios"
+                                       styleClass="register-required-note"/>
                             </children>
                         </HBox>
-
-                        <Label text="Los campos marcados con * son obligatorios."
-                               styleClass="required-note"/>
                     </children>
 
                     <padding>
-                        <Insets top="24.0" right="28.0" bottom="24.0" left="28.0"/>
+                        <Insets top="24.0" right="26.0" bottom="24.0" left="26.0"/>
                     </padding>
                 </VBox>
-
             </children>
         </HBox>
     </children>

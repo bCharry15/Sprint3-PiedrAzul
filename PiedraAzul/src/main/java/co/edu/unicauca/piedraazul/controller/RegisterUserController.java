@@ -1,5 +1,7 @@
 package co.edu.unicauca.piedraazul.controller;
 
+import java.text.Normalizer;
+
 import org.springframework.stereotype.Component;
 
 import co.edu.unicauca.piedraazul.model.User;
@@ -9,11 +11,14 @@ import co.edu.unicauca.piedraazul.observer.Observer;
 import co.edu.unicauca.piedraazul.pattern.factory.UsuarioFactory;
 import co.edu.unicauca.piedraazul.service.IPacienteService;
 import co.edu.unicauca.piedraazul.service.IUserService;
+import co.edu.unicauca.piedraazul.util.DatePickerUtils;
 import co.edu.unicauca.piedraazul.util.SceneManager;
 import co.edu.unicauca.piedraazul.util.Vista;
+
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.PasswordField;
@@ -35,6 +40,9 @@ public class RegisterUserController implements Observer {
     @FXML private PasswordField passwordField;
     @FXML private PasswordField confirmPasswordField;
 
+    @FXML private Button adminRoleButton;
+    @FXML private Button patientRoleButton;
+
     private final IUserService userService;
     private final IPacienteService pacienteService;
     private final SceneManager sceneManager;
@@ -51,6 +59,13 @@ public class RegisterUserController implements Observer {
 
     @FXML
     public void initialize() {
+        configurarCombos();
+        configurarCalendario();
+        actualizarCampoRol();
+        actualizarEstiloBotonesRol();
+    }
+
+    private void configurarCombos() {
         if (documentTypeCombo != null) {
             documentTypeCombo.setItems(FXCollections.observableArrayList(
                     "Cédula de ciudadanía",
@@ -59,20 +74,26 @@ public class RegisterUserController implements Observer {
                     "Pasaporte"
             ));
         }
+    }
 
-        actualizarCampoRol();
+    private void configurarCalendario() {
+        if (birthDatePicker != null) {
+            DatePickerUtils.configurarDatePicker(birthDatePicker);
+        }
     }
 
     @FXML
     private void selectAdminRole() {
         selectedRole = UserRole.ADMIN;
         actualizarCampoRol();
+        actualizarEstiloBotonesRol();
     }
 
     @FXML
     private void selectPatientRole() {
         selectedRole = UserRole.PACIENTE;
         actualizarCampoRol();
+        actualizarEstiloBotonesRol();
     }
 
     @FXML
@@ -82,13 +103,14 @@ public class RegisterUserController implements Observer {
 
     @FXML
     private void register() {
-        String primerNombre = getText(firstNameField);
-        String segundoNombre = getText(secondNameField);
-        String primerApellido = getText(lastNameField);
-        String segundoApellido = getText(secondLastNameField);
-        String usuario = getText(usernameField);
-        String celular = getText(phoneField);
-        String numeroDocumento = getText(documentNumberField);
+        String primerNombre = normalizarNombreOApellido(getText(firstNameField));
+        String segundoNombre = normalizarNombreOApellido(getText(secondNameField));
+        String primerApellido = normalizarNombreOApellido(getText(lastNameField));
+        String segundoApellido = normalizarNombreOApellido(getText(secondLastNameField));
+
+        String usuario = normalizarUsername(getText(usernameField));
+        String celular = normalizarTextoSimple(getText(phoneField));
+        String numeroDocumento = normalizarTextoSimple(getText(documentNumberField));
         String contrasena = getText(passwordField);
         String confirmarContrasena = getText(confirmPasswordField);
 
@@ -118,6 +140,13 @@ public class RegisterUserController implements Observer {
             return;
         }
 
+        if (contrasena.length() < 6) {
+            showAlert(Alert.AlertType.WARNING,
+                    "Contraseña débil",
+                    "La contraseña debe tener mínimo 6 caracteres.");
+            return;
+        }
+
         User user = UsuarioFactory.crearUsuario(usuario, contrasena, selectedRole);
 
         boolean registrado = userService.registerUser(user, this);
@@ -141,6 +170,7 @@ public class RegisterUserController implements Observer {
                     "El usuario fue registrado correctamente.");
 
             clearForm();
+
         } else {
             showAlert(Alert.AlertType.ERROR,
                     "Registro fallido",
@@ -149,17 +179,18 @@ public class RegisterUserController implements Observer {
     }
 
     private void guardarPerfilPaciente(String usuario,
-                                       String numeroDocumento,
-                                       String tipoDocumento,
-                                       String primerNombre,
-                                       String segundoNombre,
-                                       String primerApellido,
-                                       String segundoApellido,
-                                       String celular) {
+                                   String numeroDocumento,
+                                   String tipoDocumento,
+                                   String primerNombre,
+                                   String segundoNombre,
+                                   String primerApellido,
+                                   String segundoApellido,
+                                   String celular) {
 
-        String nombresCompletos = unirNombres(primerNombre, segundoNombre);
-        String apellidosCompletos = unirNombres(primerApellido, segundoApellido);
+    String nombresCompletos = unirNombres(primerNombre, segundoNombre);
+    String apellidosCompletos = unirNombres(primerApellido, segundoApellido);
 
+    try {
         pacienteService.obtenerOCrearPaciente(
                 usuario,
                 numeroDocumento,
@@ -171,8 +202,17 @@ public class RegisterUserController implements Observer {
                 birthDatePicker != null ? birthDatePicker.getValue() : null,
                 usuario + "@example.com"
         );
-    }
 
+    } catch (Exception e) {
+        /*
+         * No se muestra alerta al usuario porque el registro de usuario fue exitoso.
+         * Si el perfil no se pudo crear automáticamente, el paciente podrá completar
+         * sus datos personales al iniciar sesión desde el panel paciente.
+         */
+        System.err.println("REGISTER-USER-CONTROLLER -> Usuario creado, pero no se pudo guardar perfil paciente automáticamente.");
+        System.err.println("REGISTER-USER-CONTROLLER -> Detalle: " + e.getMessage());
+    }
+}
     @FXML
     private void clearForm() {
         clearIfNotNull(firstNameField);
@@ -187,18 +227,28 @@ public class RegisterUserController implements Observer {
 
         if (birthDatePicker != null) {
             birthDatePicker.setValue(null);
+
+            if (birthDatePicker.getEditor() != null) {
+                birthDatePicker.getEditor().clear();
+            }
         }
 
         if (documentTypeCombo != null) {
             documentTypeCombo.setValue(null);
         }
 
+        selectedRole = UserRole.ADMIN;
         actualizarCampoRol();
+        actualizarEstiloBotonesRol();
     }
 
     @Override
     public void update(String message) {
-        showAlert(Alert.AlertType.INFORMATION, "Información", message);
+        if (message == null || message.trim().isEmpty()) {
+            return;
+        }
+
+        System.out.println("REGISTER-USER-CONTROLLER -> " + message);
     }
 
     private void actualizarCampoRol() {
@@ -207,12 +257,86 @@ public class RegisterUserController implements Observer {
         }
     }
 
-    private String unirNombres(String principal, String secundario) {
-        if (secundario == null || secundario.trim().isEmpty()) {
-            return principal;
+    private void actualizarEstiloBotonesRol() {
+        actualizarBotonRol(adminRoleButton, selectedRole == UserRole.ADMIN);
+        actualizarBotonRol(patientRoleButton, selectedRole == UserRole.PACIENTE);
+    }
+
+    private void actualizarBotonRol(Button boton, boolean activo) {
+        if (boton == null) {
+            return;
         }
 
-        return principal + " " + secundario.trim();
+        boton.getStyleClass().remove("register-role-button-active");
+        boton.getStyleClass().remove("register-role-button");
+
+        if (activo) {
+            boton.getStyleClass().add("register-role-button-active");
+        } else {
+            boton.getStyleClass().add("register-role-button");
+        }
+    }
+
+    private String unirNombres(String principal, String secundario) {
+        String textoCompleto;
+
+        if (secundario == null || secundario.trim().isEmpty()) {
+            textoCompleto = principal;
+        } else {
+            textoCompleto = principal + " " + secundario;
+        }
+
+        return normalizarNombreOApellido(textoCompleto);
+    }
+
+    private String normalizarNombreOApellido(String valor) {
+        if (valor == null) {
+            return "";
+        }
+
+        String sinTildes = Normalizer.normalize(valor, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+
+        String limpio = sinTildes.trim().replaceAll("\\s+", " ");
+
+        if (limpio.isEmpty()) {
+            return "";
+        }
+
+        String[] palabras = limpio.toLowerCase().split(" ");
+        StringBuilder resultado = new StringBuilder();
+
+        for (String palabra : palabras) {
+            if (palabra.isBlank()) {
+                continue;
+            }
+
+            resultado.append(Character.toUpperCase(palabra.charAt(0)));
+
+            if (palabra.length() > 1) {
+                resultado.append(palabra.substring(1));
+            }
+
+            resultado.append(" ");
+        }
+
+        return resultado.toString().trim();
+    }
+
+    private String normalizarTextoSimple(String valor) {
+        if (valor == null) {
+            return "";
+        }
+
+        return valor.trim().replaceAll("\\s+", " ");
+    }
+
+    private String normalizarUsername(String valor) {
+        if (valor == null) {
+            return "";
+        }
+
+        return valor.trim().replaceAll("\\s+", "");
     }
 
     private String normalizarTipoDocumento(String tipoDocumento) {

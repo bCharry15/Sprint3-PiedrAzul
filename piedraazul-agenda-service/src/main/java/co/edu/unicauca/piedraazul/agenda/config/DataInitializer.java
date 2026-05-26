@@ -5,14 +5,12 @@ import java.time.LocalTime;
 import java.util.List;
 
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import co.edu.unicauca.piedraazul.agenda.domain.service.factory.UsuarioFactory;
 import co.edu.unicauca.piedraazul.agenda.model.DisponibilidadMedico;
 import co.edu.unicauca.piedraazul.agenda.model.Medico;
 import co.edu.unicauca.piedraazul.agenda.model.User;
-import co.edu.unicauca.piedraazul.agenda.model.enums.UserRole;
-import co.edu.unicauca.piedraazul.agenda.model.enums.UserStatus;
 import co.edu.unicauca.piedraazul.agenda.repository.DisponibilidadMedicoRepository;
 import co.edu.unicauca.piedraazul.agenda.repository.MedicoRepository;
 import co.edu.unicauca.piedraazul.agenda.repository.UserRepository;
@@ -23,27 +21,31 @@ public class DataInitializer implements CommandLineRunner {
     private final MedicoRepository medicoRepository;
     private final DisponibilidadMedicoRepository disponibilidadMedicoRepository;
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final UsuarioFactory usuarioFactory;
 
     public DataInitializer(MedicoRepository medicoRepository,
                            DisponibilidadMedicoRepository disponibilidadMedicoRepository,
                            UserRepository userRepository,
-                           BCryptPasswordEncoder passwordEncoder) {
+                           UsuarioFactory usuarioFactory) {
         this.medicoRepository = medicoRepository;
         this.disponibilidadMedicoRepository = disponibilidadMedicoRepository;
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+        this.usuarioFactory = usuarioFactory;
     }
 
     @Override
     public void run(String... args) {
         crearAdminSiNoExiste();
 
+        User usuarioMedico = obtenerOCrearUsuarioMedico();
+
         Medico jhoiner = obtenerOCrearMedico(
                 "Jhoiner Puentes",
                 "Terapista",
                 15
         );
+
+        asociarUsuarioAMedico(jhoiner, usuarioMedico);
 
         crearDisponibilidadSiNoExiste(
                 jhoiner,
@@ -71,15 +73,23 @@ public class DataInitializer implements CommandLineRunner {
             return;
         }
 
-        User admin = new User();
-        admin.setUsername("admin");
-        admin.setPassword(passwordEncoder.encode("admin123"));
-        admin.setRole(UserRole.ADMIN);
-        admin.setStatus(UserStatus.ACTIVE);
+        User admin = usuarioFactory.crearAdministrador("admin", "admin123");
 
         userRepository.save(admin);
 
-        System.out.println("AGENDA-SERVICE -> Admin inicial creado en BD.");
+        System.out.println("AGENDA-SERVICE -> Admin inicial creado en BD usando UsuarioFactory.");
+    }
+
+    private User obtenerOCrearUsuarioMedico() {
+        return userRepository.findByUsername("medico")
+                .orElseGet(() -> {
+                    User medico = usuarioFactory.crearMedico("medico", "medico123");
+                    User medicoGuardado = userRepository.save(medico);
+
+                    System.out.println("AGENDA-SERVICE -> Usuario medico inicial creado en BD usando UsuarioFactory.");
+
+                    return medicoGuardado;
+                });
     }
 
     private Medico obtenerOCrearMedico(String nombreCompleto,
@@ -90,7 +100,9 @@ public class DataInitializer implements CommandLineRunner {
         for (Medico medico : medicos) {
             if (medico.getNombreCompleto() != null
                     && medico.getNombreCompleto().equalsIgnoreCase(nombreCompleto)) {
-                return medico;
+                medico.setEspecialidad(especialidad);
+                medico.setIntervaloMinutos(intervaloMinutos);
+                return medicoRepository.save(medico);
             }
         }
 
@@ -100,6 +112,19 @@ public class DataInitializer implements CommandLineRunner {
         medico.setIntervaloMinutos(intervaloMinutos);
 
         return medicoRepository.save(medico);
+    }
+
+    private void asociarUsuarioAMedico(Medico medico, User usuarioMedico) {
+        if (medico.getUser() != null
+                && medico.getUser().getUsername() != null
+                && medico.getUser().getUsername().equalsIgnoreCase(usuarioMedico.getUsername())) {
+            return;
+        }
+
+        medico.setUser(usuarioMedico);
+        medicoRepository.save(medico);
+
+        System.out.println("AGENDA-SERVICE -> Usuario medico asociado al perfil de Jhoiner Puentes.");
     }
 
     private void crearDisponibilidadSiNoExiste(Medico medico,

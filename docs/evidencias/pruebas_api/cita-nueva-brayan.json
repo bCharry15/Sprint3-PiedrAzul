@@ -1,0 +1,14 @@
+﻿{
+  "numeroDocumento": "1075792407",
+  "tipoDocumento": "CC",
+  "nombres": "Brayan Stiven",
+  "apellidos": "Charry Vela",
+  "celular": "3133431650",
+  "genero": "HOMBRE",
+  "fechaNacimiento": "2005-12-15",
+  "correo": "brayancharry@gmail.com",
+  "medicoId": 5,
+  "fecha": "2026-06-01",
+  "hora": "09:00:00",
+  "observacion": "Nueva cita permitida después de cerrar citas anteriores"
+}

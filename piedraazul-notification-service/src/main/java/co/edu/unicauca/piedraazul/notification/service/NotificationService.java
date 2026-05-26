@@ -1,15 +1,16 @@
 package co.edu.unicauca.piedraazul.notification.service;
 
-import co.edu.unicauca.piedraazul.notification.dto.CitaCreadaNotificationRequest;
-import co.edu.unicauca.piedraazul.notification.model.NotificacionLog;
-import co.edu.unicauca.piedraazul.notification.repository.NotificacionLogRepository;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import co.edu.unicauca.piedraazul.notification.dto.CitaCreadaNotificationRequest;
+import co.edu.unicauca.piedraazul.notification.model.NotificacionLog;
+import co.edu.unicauca.piedraazul.notification.repository.NotificacionLogRepository;
 
 @Service
 public class NotificationService {
@@ -30,22 +31,38 @@ public class NotificationService {
     }
 
     public void procesarNotificacionCitaCreada(CitaCreadaNotificationRequest request) {
-        String estado = "FALLIDO";
+        if (request == null) {
+            System.err.println("NOTIFICATION-SERVICE -> Solicitud de notificación vacía.");
+            return;
+        }
 
         try {
             if (mailEnabled) {
                 enviarCorreoConfirmacion(request);
+                guardarLog(request, "ENVIADO", null);
+
+                System.out.println("NOTIFICATION-SERVICE -> Correo real enviado.");
+                System.out.println("NOTIFICATION-SERVICE -> Cita ID: " + request.getCitaId());
+                System.out.println("NOTIFICATION-SERVICE -> Paciente: " + request.getPaciente());
+                System.out.println("NOTIFICATION-SERVICE -> Correo: " + request.getCorreoPaciente());
             } else {
-                System.out.println("NOTIFICATION-SERVICE -> Envio real de correo desactivado. Modo local.");
+                guardarLog(request, "SIMULADO", "Envío real de correo desactivado en ambiente local.");
+
+                System.out.println("NOTIFICATION-SERVICE -> Envío real de correo desactivado. Modo SIMULADO.");
+                System.out.println("NOTIFICATION-SERVICE -> Cita ID: " + request.getCitaId());
+                System.out.println("NOTIFICATION-SERVICE -> Paciente: " + request.getPaciente());
+                System.out.println("NOTIFICATION-SERVICE -> Correo: " + request.getCorreoPaciente());
+                System.out.println("NOTIFICATION-SERVICE -> Celular: " + request.getCelularPaciente());
+                System.out.println("NOTIFICATION-SERVICE -> Médico/Terapista: " + request.getMedico());
+                System.out.println("NOTIFICATION-SERVICE -> Fecha: " + request.getFecha());
+                System.out.println("NOTIFICATION-SERVICE -> Hora: " + request.getHora());
             }
 
-            estado = "ENVIADO";
-            guardarLog(request, estado, null);
-
         } catch (Exception e) {
-            estado = "FALLIDO";
-            guardarLog(request, estado, e.getMessage());
-            System.err.println("NOTIFICATION-SERVICE -> Error al procesar notificacion: " + e.getMessage());
+            guardarLog(request, "FALLIDO", e.getMessage());
+
+            System.err.println("NOTIFICATION-SERVICE -> Error al procesar notificación.");
+            System.err.println("NOTIFICATION-SERVICE -> Detalle: " + e.getMessage());
         }
     }
 
@@ -60,11 +77,11 @@ public class NotificationService {
         message.setSubject("Confirmación de cita - Piedra Azul");
         message.setText(
                 "Hola " + request.getPaciente() + ",\n\n" +
-                "Tu cita fue agendada correctamente.\n\n" +
-                "Médico/Terapista: " + request.getMedico() + "\n" +
-                "Fecha: " + request.getFecha() + "\n" +
-                "Hora: " + request.getHora() + "\n\n" +
-                "Gracias por usar el sistema Piedra Azul."
+                        "Tu cita fue agendada correctamente.\n\n" +
+                        "Médico/Terapista: " + request.getMedico() + "\n" +
+                        "Fecha: " + request.getFecha() + "\n" +
+                        "Hora: " + request.getHora() + "\n\n" +
+                        "Gracias por usar el sistema Piedra Azul."
         );
 
         javaMailSender.send(message);
@@ -72,6 +89,7 @@ public class NotificationService {
 
     private void guardarLog(CitaCreadaNotificationRequest request, String estado, String detalleError) {
         NotificacionLog log = new NotificacionLog();
+
         log.setCitaId(request.getCitaId());
         log.setPaciente(request.getPaciente());
         log.setMedico(request.getMedico());
@@ -82,10 +100,10 @@ public class NotificationService {
 
         notificacionLogRepository.save(log);
 
-        System.out.println("NOTIFICATION-SERVICE -> Notificacion procesada con estado: " + estado);
+        System.out.println("NOTIFICATION-SERVICE -> Notificación procesada con estado: " + estado);
 
         if (detalleError != null && !detalleError.isBlank()) {
-            System.err.println("NOTIFICATION-SERVICE -> Detalle error: " + detalleError);
+            System.out.println("NOTIFICATION-SERVICE -> Detalle: " + detalleError);
         }
     }
 

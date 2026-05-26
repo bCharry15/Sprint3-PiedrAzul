@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -24,30 +25,48 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-    .requestMatchers(
-        "/api/agenda/health",
-        "/swagger-ui.html",
-        "/swagger-ui/**",
-        "/v3/api-docs/**"
-    ).permitAll()
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
 
-    .requestMatchers("/api/auth/**").permitAll()
+                        // Endpoints públicos
+                        .requestMatchers(
+                                "/api/agenda/health",
+                                "/api/auth/login",
+                                "/api/auth/register",
+                                "/api/auth/forgot-password",
+                                "/api/auth/reset-password",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        ).permitAll()
 
-    .requestMatchers("/api/medicos/**").hasRole("ADMIN")
-    .requestMatchers("/api/configuraciones-disponibilidad/**").hasRole("ADMIN")
+                        // Administración
+                        .requestMatchers(HttpMethod.GET, "/api/medicos/**")
+                        .hasAnyRole("ADMIN", "AGENDADOR", "PACIENTE", "MEDICO")
 
-    .requestMatchers("/api/citas/exportar").hasAnyRole("ADMIN", "AGENDADOR")
-    .requestMatchers("/api/citas/**").hasAnyRole("ADMIN", "AGENDADOR", "PACIENTE", "MEDICO")
+                        .requestMatchers("/api/medicos/**")
+                        .hasRole("ADMIN")
 
-    .requestMatchers("/api/disponibilidad/**").hasAnyRole("ADMIN", "AGENDADOR", "PACIENTE", "MEDICO")
+                        .requestMatchers("/api/configuraciones-disponibilidad/**")
+                        .hasRole("ADMIN")
 
-    .anyRequest().authenticated()
-)
-            .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
-            );
+                        // Citas
+                        .requestMatchers("/api/citas/exportar")
+                        .hasAnyRole("ADMIN", "AGENDADOR", "MEDICO")
+
+                        .requestMatchers("/api/citas/**")
+                        .hasAnyRole("ADMIN", "AGENDADOR", "PACIENTE", "MEDICO")
+
+                        // Disponibilidad
+                        .requestMatchers("/api/disponibilidad/**")
+                        .hasAnyRole("ADMIN", "AGENDADOR", "PACIENTE", "MEDICO")
+
+                        // Cualquier otro endpoint requiere autenticación
+                        .anyRequest().authenticated()
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                );
 
         return http.build();
     }
@@ -69,7 +88,7 @@ public class SecurityConfig {
         Collection<String> roles = (Collection<String>) realmAccess.get("roles");
 
         return roles.stream()
-            .map(rol -> new SimpleGrantedAuthority("ROLE_" + rol))
-            .collect(Collectors.toList());
+                .map(rol -> new SimpleGrantedAuthority("ROLE_" + rol))
+                .collect(Collectors.toList());
     }
 }

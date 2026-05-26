@@ -1,14 +1,19 @@
 package co.edu.unicauca.piedraazul.notification.dto;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+
 public class CitaCreadaNotificationRequest {
 
     private Long citaId;
+    private Long pacienteId;
     private String paciente;
-    private String medico;
-    private String fecha;
-    private String hora;
     private String correoPaciente;
     private String celularPaciente;
+    private Long medicoId;
+    private String medico;
+    private LocalDate fecha;
+    private LocalTime hora;
 
     public CitaCreadaNotificationRequest() {
     }
@@ -21,36 +26,20 @@ public class CitaCreadaNotificationRequest {
         this.citaId = citaId;
     }
 
+    public Long getPacienteId() {
+        return pacienteId;
+    }
+
+    public void setPacienteId(Long pacienteId) {
+        this.pacienteId = pacienteId;
+    }
+
     public String getPaciente() {
         return paciente;
     }
 
     public void setPaciente(String paciente) {
         this.paciente = paciente;
-    }
-
-    public String getMedico() {
-        return medico;
-    }
-
-    public void setMedico(String medico) {
-        this.medico = medico;
-    }
-
-    public String getFecha() {
-        return fecha;
-    }
-
-    public void setFecha(String fecha) {
-        this.fecha = fecha;
-    }
-
-    public String getHora() {
-        return hora;
-    }
-
-    public void setHora(String hora) {
-        this.hora = hora;
     }
 
     public String getCorreoPaciente() {
@@ -67,5 +56,37 @@ public class CitaCreadaNotificationRequest {
 
     public void setCelularPaciente(String celularPaciente) {
         this.celularPaciente = celularPaciente;
+    }
+
+    public Long getMedicoId() {
+        return medicoId;
+    }
+
+    public void setMedicoId(Long medicoId) {
+        this.medicoId = medicoId;
+    }
+
+    public String getMedico() {
+        return medico;
+    }
+
+    public void setMedico(String medico) {
+        this.medico = medico;
+    }
+
+    public LocalDate getFecha() {
+        return fecha;
+    }
+
+    public void setFecha(LocalDate fecha) {
+        this.fecha = fecha;
+    }
+
+    public LocalTime getHora() {
+        return hora;
+    }
+
+    public void setHora(LocalTime hora) {
+        this.hora = hora;
     }
 }

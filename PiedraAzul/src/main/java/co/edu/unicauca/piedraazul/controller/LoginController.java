@@ -13,10 +13,14 @@ import co.edu.unicauca.piedraazul.util.SceneManager;
 import co.edu.unicauca.piedraazul.util.SesionUsuario;
 import co.edu.unicauca.piedraazul.util.Vista;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.layout.GridPane;
 
 @Component
 public class LoginController {
@@ -101,56 +105,121 @@ public class LoginController {
 
     @FXML
     private void forgotPassword() {
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Recuperar contraseña");
-        dialog.setHeaderText(null);
-        dialog.setContentText("Ingrese su nombre de usuario:");
+        Dialog<ResetPasswordData> dialog = new Dialog<>();
+        dialog.setTitle("Restablecer contraseña");
+        dialog.setHeaderText("Verifique sus datos y defina una nueva contraseña");
 
-        Optional<String> resultado = dialog.showAndWait();
+        ButtonType aceptarButtonType = new ButtonType("Restablecer", ButtonType.OK.getButtonData());
+        dialog.getDialogPane().getButtonTypes().addAll(aceptarButtonType, ButtonType.CANCEL);
+
+        TextField usernameInput = new TextField();
+        usernameInput.setPromptText("Usuario");
+
+        TextField documentoInput = new TextField();
+        documentoInput.setPromptText("Número de documento");
+
+        PasswordField nuevaPasswordInput = new PasswordField();
+        nuevaPasswordInput.setPromptText("Nueva contraseña");
+
+        PasswordField confirmarPasswordInput = new PasswordField();
+        confirmarPasswordInput.setPromptText("Confirmar nueva contraseña");
+
+        GridPane grid = new GridPane();
+        grid.setHgap(12);
+        grid.setVgap(12);
+        grid.setPadding(new Insets(16));
+
+        grid.add(new Label("Usuario:"), 0, 0);
+        grid.add(usernameInput, 1, 0);
+
+        grid.add(new Label("Documento:"), 0, 1);
+        grid.add(documentoInput, 1, 1);
+
+        grid.add(new Label("Nueva contraseña:"), 0, 2);
+        grid.add(nuevaPasswordInput, 1, 2);
+
+        grid.add(new Label("Confirmar contraseña:"), 0, 3);
+        grid.add(confirmarPasswordInput, 1, 3);
+
+        Label ayuda = new Label("Por seguridad, la contraseña no será mostrada ni enviada en pantalla.");
+        ayuda.setStyle("-fx-text-fill: #64748b; -fx-font-size: 12px;");
+        grid.add(ayuda, 0, 4, 2, 1);
+
+        dialog.getDialogPane().setContent(grid);
+
+        dialog.setResultConverter(button -> {
+            if (button == aceptarButtonType) {
+                return new ResetPasswordData(
+                        obtenerTexto(usernameInput),
+                        obtenerTexto(documentoInput),
+                        obtenerTexto(nuevaPasswordInput),
+                        obtenerTexto(confirmarPasswordInput)
+                );
+            }
+
+            return null;
+        });
+
+        Optional<ResetPasswordData> resultado = dialog.showAndWait();
 
         if (resultado.isEmpty()) {
             return;
         }
 
-        String username = resultado.get() == null ? "" : resultado.get().trim();
+        ResetPasswordData data = resultado.get();
 
-        if (username.isEmpty()) {
+        if (data.username().isEmpty()
+                || data.numeroDocumento().isEmpty()
+                || data.nuevaPassword().isEmpty()
+                || data.confirmarPassword().isEmpty()) {
+            mostrarAlerta(
+                    Alert.AlertType.WARNING,
+                    "Campos obligatorios",
+                    "Debe completar usuario, documento, nueva contraseña y confirmación."
+            );
+            return;
+        }
+
+        if (!data.nuevaPassword().equals(data.confirmarPassword())) {
             mostrarAlerta(
                     Alert.AlertType.WARNING,
                     "Validación",
-                    "Debe ingresar un nombre de usuario."
+                    "Las contraseñas no coinciden."
+            );
+            return;
+        }
+
+        if (data.nuevaPassword().length() < 6) {
+            mostrarAlerta(
+                    Alert.AlertType.WARNING,
+                    "Contraseña débil",
+                    "La nueva contraseña debe tener mínimo 6 caracteres."
             );
             return;
         }
 
         try {
-            Map<String, String> response = agendaServiceClient.recuperarPassword(username);
+            Map<String, String> response = agendaServiceClient.restablecerPasswordSeguro(
+                    data.username(),
+                    data.numeroDocumento(),
+                    data.nuevaPassword()
+            );
 
-            if (response == null || response.get("passwordTemporal") == null) {
-                mostrarAlerta(
-                        Alert.AlertType.ERROR,
-                        "Error",
-                        "No se pudo generar la contraseña temporal."
-                );
-                return;
-            }
-
-            String passwordTemporal = response.get("passwordTemporal");
+            String mensaje = response != null && response.get("mensaje") != null
+                    ? response.get("mensaje")
+                    : "La contraseña fue restablecida correctamente.";
 
             mostrarAlerta(
                     Alert.AlertType.INFORMATION,
-                    "Contraseña recuperada",
-                    "Se generó una contraseña temporal para el usuario: " + username
-                            + "\n\nContraseña temporal: " + passwordTemporal
-                            + "\n\nUse esta contraseña para iniciar sesión."
+                    "Contraseña restablecida",
+                    mensaje
             );
 
         } catch (Exception e) {
             mostrarAlerta(
                     Alert.AlertType.ERROR,
-                    "Error",
-                    "No se pudo recuperar la contraseña.\n\n"
-                            + "Verifique que el usuario exista y que agenda-service esté corriendo."
+                    "No se pudo restablecer la contraseña",
+                    "Verifique que el usuario exista, que el documento sea correcto y que agenda-service esté corriendo."
             );
         }
     }
@@ -169,5 +238,13 @@ public class LoginController {
         alert.setHeaderText(null);
         alert.setContentText(mensaje);
         alert.showAndWait();
+    }
+
+    private record ResetPasswordData(
+            String username,
+            String numeroDocumento,
+            String nuevaPassword,
+            String confirmarPassword
+    ) {
     }
 }

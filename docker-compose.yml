@@ -34,13 +34,15 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:25.0.6
     container_name: piedraazul-keycloak
-    command: start-dev
+    command: start-dev --import-realm
     restart: unless-stopped
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
     ports:
       - "8085:8080"
+    volumes:
+      - ./keycloak/piedrazul-realm.json:/opt/keycloak/data/import/piedrazul-realm.json
     networks:
       - piedraazul-network
 
@@ -77,8 +79,18 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb-agenda:3306/piedraazul_agenda
       SPRING_DATASOURCE_USERNAME: piedraazul
       SPRING_DATASOURCE_PASSWORD: piedraazul
-      KEYCLOAK_ISSUER_URI: http://localhost:8085/realms/PiedrAzul
+
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/PiedrAzul
       KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/PiedrAzul/protocol/openid-connect/certs
+      KEYCLOAK_TOKEN_URI: http://keycloak:8080/realms/PiedrAzul/protocol/openid-connect/token
+      KEYCLOAK_CLIENT_ID: agenda-service
+
+      KEYCLOAK_BASE_URL: http://keycloak:8080
+      KEYCLOAK_REALM: PiedrAzul
+      KEYCLOAK_ADMIN_TOKEN_URI: http://keycloak:8080/realms/master/protocol/openid-connect/token
+      KEYCLOAK_ADMIN_USERNAME: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+
       NOTIFICATION_SERVICE_URL: http://notification-service:8082
     ports:
       - "8081:8081"

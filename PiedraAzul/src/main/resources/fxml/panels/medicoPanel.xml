@@ -57,7 +57,7 @@
                 <VBox spacing="6.0">
                     <children>
                         <Label fx:id="bienvenidaLabel" text="Bienvenido, médico" styleClass="top-title"/>
-                        <Label text="Aquí puede consultar sus citas por fecha." styleClass="top-subtitle"/>
+                        <Label text="Aquí puede consultar sus citas por fecha, cambiar su estado y exportarlas en CSV." styleClass="top-subtitle"/>
                     </children>
                 </VBox>
 
@@ -82,6 +82,15 @@
                                                 styleClass="content-button"/>
                                     </children>
                                 </VBox>
+
+                                <VBox spacing="6.0">
+                                    <children>
+                                        <Label text=" " styleClass="field-label"/>
+                                        <Button text="Exportar CSV"
+                                                onAction="#exportarCsv"
+                                                styleClass="content-button"/>
+                                    </children>
+                                </VBox>
                             </children>
                         </HBox>
 
@@ -98,6 +107,22 @@
                                 <TableColumn fx:id="observacionColumn" text="Observación" prefWidth="280.0"/>
                             </columns>
                         </TableView>
+
+                        <HBox spacing="12.0">
+                            <children>
+                                <Button text="Marcar como atendida"
+                                        onAction="#marcarCitaAtendida"
+                                        styleClass="content-button"/>
+
+                                <Button text="Marcar no asistida"
+                                        onAction="#marcarCitaNoAsistida"
+                                        styleClass="content-button"/>
+
+                                <Button text="Cancelar cita"
+                                        onAction="#cancelarCita"
+                                        styleClass="content-button"/>
+                            </children>
+                        </HBox>
                     </children>
                 </VBox>
             </children>

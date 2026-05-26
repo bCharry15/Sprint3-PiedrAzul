@@ -405,3 +405,496 @@
 .menu-button-light:hover {
     -fx-background-color: #cbd9e8;
 }
+
+/* =========================================================
+   Mejoras visuales globales - PiedraAzul
+   ========================================================= */
+
+.sidebar {
+    -fx-spacing: 14;
+}
+
+.sidebar-actions {
+    -fx-padding: 20 0 0 0;
+    -fx-spacing: 10;
+}
+
+.dashboard-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.dashboard-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.date-picker {
+    -fx-pref-height: 42px;
+    -fx-min-height: 42px;
+    -fx-background-radius: 10;
+}
+
+.date-picker .text-field {
+    -fx-font-size: 14px;
+    -fx-prompt-text-fill: #9ca3af;
+}
+
+.date-picker .arrow-button {
+    -fx-pref-width: 42px;
+    -fx-background-radius: 0 10 10 0;
+}
+
+.date-picker-popup {
+    -fx-background-radius: 12;
+}
+
+.date-picker-popup .month-year-pane {
+    -fx-padding: 8;
+}
+
+.date-picker-popup .calendar-grid {
+    -fx-padding: 8;
+}
+
+/* =========================================================
+   Mejoras visuales globales - PiedraAzul
+   ========================================================= */
+
+.sidebar {
+    -fx-spacing: 14;
+}
+
+.sidebar-action-button {
+    -fx-pref-height: 42px;
+    -fx-min-height: 42px;
+}
+
+.date-picker {
+    -fx-pref-height: 42px;
+    -fx-min-height: 42px;
+    -fx-background-radius: 10;
+}
+
+.date-picker .text-field {
+    -fx-font-size: 14px;
+    -fx-prompt-text-fill: #9ca3af;
+}
+
+.date-picker .arrow-button {
+    -fx-pref-width: 42px;
+    -fx-background-radius: 0 10 10 0;
+}
+
+/* =========================================================
+   Mejoras visuales globales - PiedraAzul
+   ========================================================= */
+
+.sidebar {
+    -fx-spacing: 14;
+}
+
+.sidebar-action-button {
+    -fx-pref-height: 42px;
+    -fx-min-height: 42px;
+}
+
+.date-picker {
+    -fx-pref-height: 42px;
+    -fx-min-height: 42px;
+    -fx-background-radius: 10;
+}
+
+.date-picker .text-field {
+    -fx-font-size: 14px;
+    -fx-prompt-text-fill: #9ca3af;
+}
+
+.date-picker .arrow-button {
+    -fx-pref-width: 42px;
+    -fx-background-radius: 0 10 10 0;
+}
+
+.dialog-pane {
+    -fx-background-radius: 12;
+}
+
+.dialog-pane .combo-box {
+    -fx-pref-height: 38px;
+}
+
+/* =========================================================
+   Pantalla de registro - mejora visual
+   ========================================================= */
+
+.register-page-root {
+    -fx-background-color: #eaf2f8;
+}
+
+.register-sidebar-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 22;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.12), 18, 0, 0, 6);
+}
+
+.register-brand-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #0f172a;
+}
+
+.register-brand-subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: #64748b;
+}
+
+.register-sidebar-heading {
+    -fx-font-size: 20px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #0f172a;
+}
+
+.register-sidebar-description {
+    -fx-font-size: 13px;
+    -fx-text-fill: #64748b;
+    -fx-line-spacing: 2;
+}
+
+.register-role-button {
+    -fx-background-color: #17233d;
+    -fx-text-fill: white;
+    -fx-font-weight: 700;
+    -fx-font-size: 13px;
+    -fx-background-radius: 10;
+    -fx-pref-height: 46;
+    -fx-cursor: hand;
+}
+
+.register-role-button-active {
+    -fx-background-color: #33288f;
+    -fx-text-fill: white;
+    -fx-font-weight: 800;
+    -fx-font-size: 13px;
+    -fx-background-radius: 10;
+    -fx-pref-height: 46;
+    -fx-cursor: hand;
+}
+
+.register-back-button {
+    -fx-background-color: #e2e8f0;
+    -fx-text-fill: #0f172a;
+    -fx-font-weight: 800;
+    -fx-font-size: 13px;
+    -fx-background-radius: 10;
+    -fx-pref-height: 46;
+    -fx-cursor: hand;
+}
+
+.register-help-card {
+    -fx-background-color: #f1f5f9;
+    -fx-background-radius: 14;
+    -fx-padding: 14;
+}
+
+.register-help-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #0f172a;
+}
+
+.register-help-text {
+    -fx-font-size: 12px;
+    -fx-text-fill: #64748b;
+}
+
+.register-main-card {
+    -fx-background-color: rgba(255, 255, 255, 0.60);
+    -fx-background-radius: 22;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.10), 18, 0, 0, 6);
+}
+
+.register-main-title {
+    -fx-font-size: 26px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #0f172a;
+}
+
+.register-main-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #64748b;
+}
+
+.register-scroll {
+    -fx-background: transparent;
+    -fx-background-color: transparent;
+}
+
+.register-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.register-section-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 16;
+    -fx-padding: 18;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.08), 10, 0, 0, 3);
+}
+
+.register-section-title {
+    -fx-font-size: 17px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #0f172a;
+}
+
+.register-section-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #64748b;
+}
+
+.field-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #1e293b;
+}
+
+.register-input,
+.register-input-readonly,
+.register-combo,
+.register-date-picker {
+    -fx-pref-height: 42;
+    -fx-min-height: 42;
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 10;
+    -fx-border-color: #cbd5e1;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-font-size: 13px;
+}
+
+.register-input:focused,
+.register-combo:focused,
+.register-date-picker:focused {
+    -fx-border-color: #33288f;
+    -fx-border-width: 1.4;
+}
+
+.register-input-readonly {
+    -fx-background-color: #f8fafc;
+    -fx-text-fill: #334155;
+}
+
+.register-primary-button {
+    -fx-background-color: #33288f;
+    -fx-text-fill: white;
+    -fx-font-weight: 900;
+    -fx-font-size: 13px;
+    -fx-background-radius: 10;
+    -fx-pref-height: 44;
+    -fx-padding: 0 22 0 22;
+    -fx-cursor: hand;
+}
+
+.register-secondary-button {
+    -fx-background-color: #e2e8f0;
+    -fx-text-fill: #0f172a;
+    -fx-font-weight: 800;
+    -fx-font-size: 13px;
+    -fx-background-radius: 10;
+    -fx-pref-height: 44;
+    -fx-padding: 0 22 0 22;
+    -fx-cursor: hand;
+}
+
+.register-required-note {
+    -fx-font-size: 12px;
+    -fx-text-fill: #64748b;
+}
+
+/* =========================================================
+   Pantalla Login - mejora visual
+   ========================================================= */
+
+.login-root {
+    -fx-background-color: #0f172a;
+}
+
+.login-info-panel {
+    -fx-background-color: linear-gradient(to bottom right, #eaf2f8, #f8fafc);
+    -fx-background-radius: 24;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.20), 22, 0, 0, 8);
+}
+
+.login-info-logo-circle {
+    -fx-fill: #7dd3fc;
+}
+
+.login-info-logo-icon {
+    -fx-text-fill: white;
+    -fx-font-size: 30px;
+    -fx-font-weight: 900;
+}
+
+.login-info-title {
+    -fx-font-size: 34px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #0f172a;
+}
+
+.login-info-subtitle {
+    -fx-font-size: 15px;
+    -fx-text-fill: #475569;
+}
+
+.login-info-separator {
+    -fx-opacity: 0.35;
+}
+
+.login-info-heading {
+    -fx-font-size: 26px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #0f172a;
+    -fx-line-spacing: 2;
+}
+
+.login-info-description {
+    -fx-font-size: 14px;
+    -fx-text-fill: #475569;
+    -fx-line-spacing: 4;
+}
+
+.login-check-icon {
+    -fx-text-fill: #16a34a;
+    -fx-font-size: 17px;
+    -fx-font-weight: 900;
+}
+
+.login-feature-text {
+    -fx-font-size: 14px;
+    -fx-text-fill: #1e293b;
+    -fx-font-weight: 600;
+}
+
+.login-footer-note {
+    -fx-background-color: rgba(255, 255, 255, 0.70);
+    -fx-background-radius: 16;
+    -fx-padding: 16;
+}
+
+.login-footer-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #0f172a;
+}
+
+.login-footer-text {
+    -fx-font-size: 12px;
+    -fx-text-fill: #64748b;
+    -fx-line-spacing: 2;
+}
+
+.login-form-panel {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 24;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.24), 24, 0, 0, 8);
+}
+
+.login-form-logo-circle {
+    -fx-fill: #7dd3fc;
+}
+
+.login-form-logo-icon {
+    -fx-text-fill: white;
+    -fx-font-size: 32px;
+    -fx-font-weight: 900;
+}
+
+.login-form-title {
+    -fx-font-size: 27px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #0f172a;
+}
+
+.login-form-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #64748b;
+}
+
+.login-field-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #1e293b;
+}
+
+.login-input {
+    -fx-pref-height: 44;
+    -fx-min-height: 44;
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 11;
+    -fx-border-color: #cbd5e1;
+    -fx-border-radius: 11;
+    -fx-border-width: 1;
+    -fx-font-size: 13px;
+    -fx-padding: 0 14 0 14;
+}
+
+.login-input:focused {
+    -fx-border-color: #33288f;
+    -fx-border-width: 1.5;
+}
+
+.login-primary-button {
+    -fx-background-color: #33288f;
+    -fx-text-fill: white;
+    -fx-font-weight: 900;
+    -fx-font-size: 14px;
+    -fx-background-radius: 11;
+    -fx-pref-height: 46;
+    -fx-cursor: hand;
+}
+
+.login-primary-button:hover {
+    -fx-background-color: #2b2378;
+}
+
+.login-secondary-button {
+    -fx-background-color: #e2e8f0;
+    -fx-text-fill: #0f172a;
+    -fx-font-weight: 900;
+    -fx-font-size: 14px;
+    -fx-background-radius: 11;
+    -fx-pref-height: 46;
+    -fx-cursor: hand;
+}
+
+.login-secondary-button:hover {
+    -fx-background-color: #cbd5e1;
+}
+
+.login-link-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #33288f;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-underline: true;
+    -fx-cursor: hand;
+}
+
+.login-link-button:hover {
+    -fx-text-fill: #1e1b4b;
+}
+
+.login-access-note {
+    -fx-background-color: #f8fafc;
+    -fx-background-radius: 14;
+    -fx-padding: 14;
+}
+
+.login-access-title {
+    -fx-font-size: 12px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #0f172a;
+}
+
+.login-access-text {
+    -fx-font-size: 12px;
+    -fx-text-fill: #64748b;
+}

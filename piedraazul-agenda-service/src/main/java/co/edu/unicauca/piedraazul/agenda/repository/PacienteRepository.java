@@ -1,11 +1,18 @@
 package co.edu.unicauca.piedraazul.agenda.repository;
 
-import co.edu.unicauca.piedraazul.agenda.model.Paciente;
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.Optional;
 
-public interface PacienteRepository extends JpaRepository<Paciente, Long> {
-    Optional<Paciente> findByNumeroDocumento(String numeroDocumento);
-}
+import org.springframework.data.jpa.repository.JpaRepository;
 
+import co.edu.unicauca.piedraazul.agenda.model.Paciente;
+
+public interface PacienteRepository extends JpaRepository<Paciente, Long> {
+
+    Optional<Paciente> findByNumeroDocumento(String numeroDocumento);
+
+    Optional<Paciente> findByUsername(String username);
+
+    boolean existsByNumeroDocumento(String numeroDocumento);
+
+    boolean existsByUsername(String username);
+}

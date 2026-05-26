@@ -1,0 +1,14 @@
+﻿{
+  "numeroDocumento": "999888777",
+  "tipoDocumento": "CC",
+  "nombres": "Paciente",
+  "apellidos": "Festivo",
+  "celular": "3001234567",
+  "genero": "HOMBRE",
+  "fechaNacimiento": "2000-01-01",
+  "correo": "pacientefestivo@test.com",
+  "medicoId": 5,
+  "fecha": "2026-06-08",
+  "hora": "09:00:00",
+  "observacion": "Prueba de bloqueo por festivo"
+}

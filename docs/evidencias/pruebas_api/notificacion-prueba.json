@@ -1,0 +1,11 @@
+﻿{
+  "citaId": 999,
+  "pacienteId": 999,
+  "paciente": "Paciente Prueba Simulada",
+  "correoPaciente": "prueba@example.com",
+  "celularPaciente": "3001234567",
+  "medicoId": 5,
+  "medico": "Doctor Samuel Prueba",
+  "fecha": "2026-06-01",
+  "hora": "10:30:00"
+}

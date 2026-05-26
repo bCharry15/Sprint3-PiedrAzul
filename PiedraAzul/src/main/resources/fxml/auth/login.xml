@@ -5,94 +5,237 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
 
-<AnchorPane prefHeight="700.0" prefWidth="1100.0"
+<AnchorPane prefHeight="760.0"
+            prefWidth="1280.0"
             xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="co.edu.unicauca.piedraazul.controller.LoginController"
-            styleClass="app-background">
+            styleClass="login-root">
 
     <children>
-        <StackPane AnchorPane.topAnchor="0.0"
-                   AnchorPane.bottomAnchor="0.0"
-                   AnchorPane.leftAnchor="0.0"
-                   AnchorPane.rightAnchor="0.0"
-                   alignment="CENTER">
+        <HBox AnchorPane.topAnchor="34.0"
+              AnchorPane.bottomAnchor="34.0"
+              AnchorPane.leftAnchor="34.0"
+              AnchorPane.rightAnchor="34.0"
+              spacing="28.0"
+              alignment="CENTER">
 
             <children>
-                <AnchorPane maxWidth="1150.0" maxHeight="620.0"
-                            styleClass="main-panel">
+
+                <!-- Panel informativo -->
+                <VBox HBox.hgrow="ALWAYS"
+                      alignment="CENTER_LEFT"
+                      spacing="24.0"
+                      styleClass="login-info-panel">
+
+                    <padding>
+                        <Insets top="46.0" right="46.0" bottom="46.0" left="46.0"/>
+                    </padding>
+
                     <children>
-                        <StackPane AnchorPane.topAnchor="0.0"
-                                   AnchorPane.bottomAnchor="0.0"
-                                   AnchorPane.leftAnchor="0.0"
-                                   AnchorPane.rightAnchor="0.0"
-                                   alignment="CENTER">
-
+                        <VBox spacing="14.0">
                             <children>
-                                <VBox alignment="CENTER"
-                                      spacing="18.0"
-                                      maxWidth="370.0"
-                                      prefWidth="370.0"
-                                      styleClass="card">
+                                <StackPane minWidth="86.0"
+                                           minHeight="86.0"
+                                           prefWidth="86.0"
+                                           prefHeight="86.0"
+                                           maxWidth="86.0"
+                                           maxHeight="86.0">
                                     <children>
-                                        <StackPane styleClass="logo-circle">
-                                            <children>
-                                                <Label text="❤" styleClass="logo-text"/>
-                                            </children>
-                                        </StackPane>
-
-                                        <VBox alignment="CENTER" spacing="4.0">
-                                            <children>
-                                                <Label text="Piedrazul" styleClass="brand-title"/>
-                                                <Label text="Citas Médicas" styleClass="brand-subtitle"/>
-                                            </children>
-                                        </VBox>
-
-                                        <Label text="Inicio de Sesión" styleClass="section-title"/>
-
-                                        <VBox spacing="6.0" prefWidth="280.0">
-                                            <children>
-                                                <Label text="Usuario" styleClass="field-label"/>
-                                                <TextField fx:id="usernameField" promptText="Ingrese su usuario"/>
-                                            </children>
-                                        </VBox>
-
-                                        <VBox spacing="6.0" prefWidth="280.0">
-                                            <children>
-                                                <Label text="Contraseña" styleClass="field-label"/>
-                                                <PasswordField fx:id="passwordField" promptText="Ingrese su contraseña"/>
-                                            </children>
-                                        </VBox>
-
-                                        <Button text="Iniciar Sesión"
-                                                onAction="#login"
-                                                prefWidth="220.0"
-                                                styleClass="primary-button"/>
-
-                                        <Button text="¿Olvidaste tu contraseña?"
-                                                mnemonicParsing="false"
-                                                styleClass="link-button"/>
-
-                                        <Button text="Registrarse"
-                                                onAction="#goToRegister"
-                                                prefWidth="220.0"
-                                                styleClass="secondary-button"/>
+                                        <Circle radius="43.0" styleClass="login-info-logo-circle"/>
+                                        <Label text="❤" styleClass="login-info-logo-icon"/>
                                     </children>
+                                </StackPane>
 
-                                    <padding>
-                                        <Insets top="25.0" right="25.0" bottom="25.0" left="25.0"/>
-                                    </padding>
+                                <VBox spacing="4.0">
+                                    <children>
+                                        <Label text="PiedraAzul"
+                                               styleClass="login-info-title"/>
+
+                                        <Label text="Sistema de gestión y agendamiento de citas médicas"
+                                               wrapText="true"
+                                               styleClass="login-info-subtitle"/>
+                                    </children>
                                 </VBox>
                             </children>
-                        </StackPane>
+                        </VBox>
+
+                        <Separator styleClass="login-info-separator"/>
+
+                        <VBox spacing="16.0">
+                            <children>
+                                <Label text="Gestiona tus citas de forma simple, segura y ordenada."
+                                       wrapText="true"
+                                       styleClass="login-info-heading"/>
+
+                                <Label text="Accede según tu rol para administrar médicos, configurar disponibilidad, agendar pacientes, consultar historial clínico de citas y recibir notificaciones de confirmación."
+                                       wrapText="true"
+                                       styleClass="login-info-description"/>
+                            </children>
+                        </VBox>
+
+                        <VBox spacing="12.0">
+                            <children>
+                                <HBox spacing="10.0" alignment="CENTER_LEFT">
+                                    <children>
+                                        <Label text="✓" styleClass="login-check-icon"/>
+                                        <Label text="Agendamiento autónomo para pacientes"
+                                               styleClass="login-feature-text"/>
+                                    </children>
+                                </HBox>
+
+                                <HBox spacing="10.0" alignment="CENTER_LEFT">
+                                    <children>
+                                        <Label text="✓" styleClass="login-check-icon"/>
+                                        <Label text="Gestión de médicos, terapistas y disponibilidad"
+                                               styleClass="login-feature-text"/>
+                                    </children>
+                                </HBox>
+
+                                <HBox spacing="10.0" alignment="CENTER_LEFT">
+                                    <children>
+                                        <Label text="✓" styleClass="login-check-icon"/>
+                                        <Label text="Consulta de citas, historial y exportación CSV"
+                                               styleClass="login-feature-text"/>
+                                    </children>
+                                </HBox>
+
+                                <HBox spacing="10.0" alignment="CENTER_LEFT">
+                                    <children>
+                                        <Label text="✓" styleClass="login-check-icon"/>
+                                        <Label text="Autenticación por roles con acceso seguro"
+                                               styleClass="login-feature-text"/>
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+
+                        <Region VBox.vgrow="ALWAYS"/>
+
+                        <VBox spacing="6.0" styleClass="login-footer-note">
+                            <children>
+                                <Label text="PiedraAzul · Citas Médicas"
+                                       styleClass="login-footer-title"/>
+
+                                <Label text="Proyecto académico orientado a buenas prácticas de arquitectura, seguridad y experiencia de usuario."
+                                       wrapText="true"
+                                       styleClass="login-footer-text"/>
+                            </children>
+                        </VBox>
                     </children>
-                </AnchorPane>
+                </VBox>
+
+                <!-- Panel de acceso -->
+                <VBox minWidth="430.0"
+                      prefWidth="430.0"
+                      maxWidth="430.0"
+                      alignment="CENTER"
+                      spacing="20.0"
+                      styleClass="login-form-panel">
+
+                    <padding>
+                        <Insets top="42.0" right="42.0" bottom="42.0" left="42.0"/>
+                    </padding>
+
+                    <children>
+                        <VBox alignment="CENTER" spacing="10.0">
+                            <children>
+                                <StackPane minWidth="96.0"
+                                           minHeight="96.0"
+                                           prefWidth="96.0"
+                                           prefHeight="96.0"
+                                           maxWidth="96.0"
+                                           maxHeight="96.0">
+                                    <children>
+                                        <Circle radius="48.0" styleClass="login-form-logo-circle"/>
+                                        <Label text="❤" styleClass="login-form-logo-icon"/>
+                                    </children>
+                                </StackPane>
+
+                                <VBox alignment="CENTER" spacing="3.0">
+                                    <children>
+                                        <Label text="Bienvenido"
+                                               styleClass="login-form-title"/>
+
+                                        <Label text="Ingresa con tus credenciales"
+                                               styleClass="login-form-subtitle"/>
+                                    </children>
+                                </VBox>
+                            </children>
+                        </VBox>
+
+                        <VBox spacing="14.0" maxWidth="330.0">
+                            <children>
+                                <VBox spacing="6.0">
+                                    <children>
+                                        <Label text="Usuario"
+                                               styleClass="login-field-label"/>
+
+                                        <TextField fx:id="usernameField"
+                                                   promptText="Ingrese su usuario"
+                                                   maxWidth="Infinity"
+                                                   styleClass="login-input"/>
+                                    </children>
+                                </VBox>
+
+                                <VBox spacing="6.0">
+                                    <children>
+                                        <Label text="Contraseña"
+                                               styleClass="login-field-label"/>
+
+                                        <PasswordField fx:id="passwordField"
+                                                       promptText="Ingrese su contraseña"
+                                                       maxWidth="Infinity"
+                                                       styleClass="login-input"/>
+                                    </children>
+                                </VBox>
+                            </children>
+                        </VBox>
+
+                        <VBox spacing="12.0" maxWidth="330.0">
+                            <children>
+                                <Button text="Iniciar sesión"
+                                        onAction="#login"
+                                        maxWidth="Infinity"
+                                        styleClass="login-primary-button"/>
+
+                                <Button text="¿Olvidaste tu contraseña?"
+                                        onAction="#forgotPassword"
+                                        maxWidth="Infinity"
+                                        mnemonicParsing="false"
+                                        styleClass="login-link-button"/>
+
+                                <Separator/>
+
+                                <Button text="Crear cuenta nueva"
+                                        onAction="#goToRegister"
+                                        maxWidth="Infinity"
+                                        styleClass="login-secondary-button"/>
+                            </children>
+                        </VBox>
+
+                        <VBox alignment="CENTER" spacing="4.0" styleClass="login-access-note">
+                            <children>
+                                <Label text="Acceso por roles"
+                                       styleClass="login-access-title"/>
+
+                                <Label text="Administrador · Agendador · Médico · Paciente"
+                                       wrapText="true"
+                                       styleClass="login-access-text"/>
+                            </children>
+                        </VBox>
+                    </children>
+                </VBox>
             </children>
-        </StackPane>
+        </HBox>
     </children>
 </AnchorPane>

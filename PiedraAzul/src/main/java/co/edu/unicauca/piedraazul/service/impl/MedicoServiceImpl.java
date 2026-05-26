@@ -38,37 +38,76 @@ public class MedicoServiceImpl implements IMedicoService {
 
         return Arrays.stream(response)
                 .map(this::convertirAMedico)
+                .filter(medico -> medico != null)
                 .toList();
     }
 
     @Override
     public Optional<Medico> buscarPorId(Long id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+
         return listarTodos()
                 .stream()
+                .filter(medico -> medico.getId() != null)
                 .filter(medico -> medico.getId().equals(id))
                 .findFirst();
     }
 
     @Override
     public Optional<Medico> buscarPorUsernameUsuario(String username) {
-        if (username == null) {
+        String usernameBuscado = normalizarUsername(username);
+
+        if (usernameBuscado.isEmpty()) {
             return Optional.empty();
         }
 
-        return listarTodos()
-                .stream()
+        List<Medico> medicos = listarTodos();
+
+        Optional<Medico> encontrado = medicos.stream()
                 .filter(medico -> medico.getUser() != null)
-                .filter(medico -> username.equals(medico.getUser().getUsername()))
+                .filter(medico -> normalizarUsername(medico.getUser().getUsername())
+                        .equalsIgnoreCase(usernameBuscado))
                 .findFirst();
+
+        if (encontrado.isPresent()) {
+            return encontrado;
+        }
+
+        /*
+         * Fallback defensivo:
+         * Si por alguna razón el username llega con diferencia de formato
+         * desde Keycloak o desde sesión, se compara ignorando mayúsculas,
+         * espacios y dejando trazabilidad en consola.
+         */
+        System.out.println("MEDICO-SERVICE -> No se encontró médico para username: " + usernameBuscado);
+        System.out.println("MEDICO-SERVICE -> Médicos recibidos desde agenda-service:");
+
+        for (Medico medico : medicos) {
+            String usernameMedico = medico.getUser() != null
+                    ? medico.getUser().getUsername()
+                    : "";
+
+            System.out.println(" - ID: " + medico.getId()
+                    + " | Médico: " + medico.getNombreCompleto()
+                    + " | Username: " + usernameMedico);
+        }
+
+        return Optional.empty();
     }
 
     @Override
-    public Medico registrarMedico(String nombreCompleto, String especialidad,
-                                  Integer intervaloMinutos, String username,
+    public Medico registrarMedico(String nombreCompleto,
+                                  String especialidad,
+                                  Integer intervaloMinutos,
+                                  String username,
                                   String password) {
 
+        String usernameNormalizado = normalizarUsername(username);
+
         User user = new User();
-        user.setUsername(username);
+        user.setUsername(usernameNormalizado);
         user.setPassword(password);
         user.setRole(UserRole.MEDICO);
         user.setStatus(UserStatus.ACTIVE);
@@ -83,7 +122,7 @@ public class MedicoServiceImpl implements IMedicoService {
                 nombreCompleto,
                 especialidad,
                 intervaloMinutos,
-                username,
+                usernameNormalizado,
                 password
         );
 
@@ -108,14 +147,24 @@ public class MedicoServiceImpl implements IMedicoService {
         medico.setEspecialidad(response.getEspecialidad());
         medico.setIntervaloMinutos(response.getIntervaloMinutos());
 
-        if (response.getUsername() != null) {
+        String username = normalizarUsername(response.getUsername());
+
+        if (!username.isEmpty()) {
             User user = new User();
-            user.setUsername(response.getUsername());
+            user.setUsername(username);
             user.setRole(UserRole.MEDICO);
             user.setStatus(UserStatus.ACTIVE);
             medico.setUser(user);
         }
 
         return medico;
+    }
+
+    private String normalizarUsername(String username) {
+        if (username == null) {
+            return "";
+        }
+
+        return username.trim();
     }
 }

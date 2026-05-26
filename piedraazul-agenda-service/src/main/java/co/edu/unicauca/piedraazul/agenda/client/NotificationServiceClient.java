@@ -1,9 +1,10 @@
 package co.edu.unicauca.piedraazul.agenda.client;
 
-import co.edu.unicauca.piedraazul.agenda.event.CitaCreadaEvent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+
+import co.edu.unicauca.piedraazul.agenda.infrastructure.adapter.in.event.CitaCreadaEvent;
 
 import java.util.HashMap;
 import java.util.Map;
