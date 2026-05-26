@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -50,6 +51,26 @@ public class DbiiRestController {
     @GetMapping("/api/dbii/citas-por-estado")
     public List<Map<String, Object>> listarCitasPorEstado() {
         return dbiiOracleService.listarCitasPorEstado();
+    }
+
+    @GetMapping("/api/dbii/pacientes/documento/{numDocumento}")
+    public Map<String, Object> buscarPacientePorDocumento(@PathVariable String numDocumento) {
+        return dbiiOracleService.buscarPacientePorDocumento(numDocumento);
+    }
+
+    @GetMapping("/api/dbii/citas/documento/{numDocumento}")
+    public Map<String, Object> buscarCitasPorDocumento(@PathVariable String numDocumento) {
+        return dbiiOracleService.buscarCitasPorDocumento(numDocumento);
+    }
+
+    @GetMapping("/api/dbii/auditoria/documento/{numDocumento}")
+    public Map<String, Object> buscarAuditoriaPorDocumento(@PathVariable String numDocumento) {
+        return dbiiOracleService.buscarAuditoriaPorDocumento(numDocumento);
+    }
+
+    @GetMapping("/api/dbii/evidencia/documento/{numDocumento}")
+    public Map<String, Object> buscarEvidenciaCompletaPorDocumento(@PathVariable String numDocumento) {
+        return dbiiOracleService.buscarEvidenciaCompletaPorDocumento(numDocumento);
     }
 
     @PostMapping("/api/dbii/procedimientos/pacientes")

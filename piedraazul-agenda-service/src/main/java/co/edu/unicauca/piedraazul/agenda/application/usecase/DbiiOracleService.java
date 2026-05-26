@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -116,6 +117,114 @@ public class DbiiOracleService {
         return jdbcTemplate.queryForList(sql);
     }
 
+    public Map<String, Object> buscarPacientePorDocumento(String numDocumento) {
+        String documento = normalizarDocumento(numDocumento);
+
+        String sql = """
+                SELECT
+                    ID_PACIENTE,
+                    TIPO_DOCUMENTO,
+                    NUM_DOCUMENTO,
+                    NOMBRES,
+                    APELLIDOS,
+                    FECHA_NACIMIENTO,
+                    CELULAR,
+                    DIRECCION,
+                    EMAIL,
+                    ESTADO
+                FROM PACIENTE
+                WHERE NUM_DOCUMENTO = ?
+                ORDER BY ID_PACIENTE DESC
+                """;
+
+        List<Map<String, Object>> pacientes = jdbcTemplate.queryForList(sql, documento);
+
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("documentoConsultado", documento);
+        respuesta.put("total", pacientes.size());
+        respuesta.put("pacientes", pacientes);
+
+        return respuesta;
+    }
+
+    public Map<String, Object> buscarCitasPorDocumento(String numDocumento) {
+        String documento = normalizarDocumento(numDocumento);
+
+        String sql = """
+                SELECT
+                    c.ID_CITA,
+                    p.NUM_DOCUMENTO,
+                    p.NOMBRES || ' ' || p.APELLIDOS AS PACIENTE,
+                    m.NOMBRES || ' ' || m.APELLIDOS AS MEDICO,
+                    m.TIPO_PROFESIONAL,
+                    c.FECHA_CITA,
+                    c.HORA_CITA,
+                    c.ESTADO,
+                    c.MOTIVO,
+                    c.OBSERVACIONES
+                FROM CITA c
+                JOIN PACIENTE p ON p.ID_PACIENTE = c.ID_PACIENTE
+                JOIN MEDICO_TERAPISTA m ON m.ID_MEDICO = c.ID_MEDICO
+                WHERE p.NUM_DOCUMENTO = ?
+                ORDER BY c.ID_CITA DESC
+                """;
+
+        List<Map<String, Object>> citas = jdbcTemplate.queryForList(sql, documento);
+
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("documentoConsultado", documento);
+        respuesta.put("total", citas.size());
+        respuesta.put("citas", citas);
+
+        return respuesta;
+    }
+
+    public Map<String, Object> buscarAuditoriaPorDocumento(String numDocumento) {
+        String documento = normalizarDocumento(numDocumento);
+
+        String sql = """
+                SELECT
+                    a.ID_AUDITORIA,
+                    a.ID_USUARIO,
+                    a.FECHA_EVENTO,
+                    a.ACCION,
+                    a.TABLA_AFECTADA,
+                    a.DESCRIPCION
+                FROM AUDITORIA a
+                WHERE a.DESCRIPCION LIKE '%' || ? || '%'
+                   OR EXISTS (
+                        SELECT 1
+                        FROM CITA c
+                        JOIN PACIENTE p ON p.ID_PACIENTE = c.ID_PACIENTE
+                        WHERE p.NUM_DOCUMENTO = ?
+                          AND a.DESCRIPCION LIKE '%ID_CITA_DBII: ' || TO_CHAR(c.ID_CITA) || '%'
+                   )
+                ORDER BY a.ID_AUDITORIA DESC
+                FETCH FIRST 20 ROWS ONLY
+                """;
+
+        List<Map<String, Object>> auditorias = jdbcTemplate.queryForList(sql, documento, documento);
+
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("documentoConsultado", documento);
+        respuesta.put("total", auditorias.size());
+        respuesta.put("auditoria", auditorias);
+
+        return respuesta;
+    }
+
+    public Map<String, Object> buscarEvidenciaCompletaPorDocumento(String numDocumento) {
+        String documento = normalizarDocumento(numDocumento);
+
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("documentoConsultado", documento);
+        respuesta.put("paciente", buscarPacientePorDocumento(documento).get("pacientes"));
+        respuesta.put("citas", buscarCitasPorDocumento(documento).get("citas"));
+        respuesta.put("auditoria", buscarAuditoriaPorDocumento(documento).get("auditoria"));
+
+        return respuesta;
+    }
+
     public Map<String, Object> insertarPacienteConProcedimiento(Map<String, String> body) {
         String tipoDocumento = obtenerValor(body, "tipoDocumento", "CC");
         String numDocumento = obtenerValor(body, "numDocumento", generarDocumentoPrueba());
@@ -190,6 +299,7 @@ public class DbiiOracleService {
                     "La fecha de nacimiento debe tener formato YYYY-MM-DD.",
                     ex
             );
+
         } catch (SQLException ex) {
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
@@ -215,5 +325,16 @@ public class DbiiOracleService {
 
     private String generarDocumentoPrueba() {
         return "BDII" + System.currentTimeMillis();
+    }
+
+    private String normalizarDocumento(String numDocumento) {
+        if (numDocumento == null || numDocumento.trim().isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El numero de documento es obligatorio."
+            );
+        }
+
+        return numDocumento.trim();
     }
 }
