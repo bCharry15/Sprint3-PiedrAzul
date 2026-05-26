@@ -29,6 +29,7 @@ public class GestionarUsuariosService implements GestionarUsuariosUseCase {
     private final RegistrarUsuarioKeycloakPort registrarUsuarioKeycloakPort;
     private final UserRepository userRepository;
     private final PacienteRepository pacienteRepository;
+    private final DbiiSincronizacionService dbiiSincronizacionService;
 
     public GestionarUsuariosService(
             GestionarUsuariosPort gestionarUsuariosPort,
@@ -36,7 +37,8 @@ public class GestionarUsuariosService implements GestionarUsuariosUseCase {
             AutenticarUsuarioPort autenticarUsuarioPort,
             RegistrarUsuarioKeycloakPort registrarUsuarioKeycloakPort,
             UserRepository userRepository,
-            PacienteRepository pacienteRepository
+            PacienteRepository pacienteRepository,
+            DbiiSincronizacionService dbiiSincronizacionService
     ) {
         this.gestionarUsuariosPort = gestionarUsuariosPort;
         this.codificarPasswordPort = codificarPasswordPort;
@@ -44,6 +46,7 @@ public class GestionarUsuariosService implements GestionarUsuariosUseCase {
         this.registrarUsuarioKeycloakPort = registrarUsuarioKeycloakPort;
         this.userRepository = userRepository;
         this.pacienteRepository = pacienteRepository;
+        this.dbiiSincronizacionService = dbiiSincronizacionService;
     }
 
     @Override
@@ -99,9 +102,15 @@ public class GestionarUsuariosService implements GestionarUsuariosUseCase {
 
         gestionarUsuariosPort.guardar(user);
 
+        dbiiSincronizacionService.sincronizarUsuarioSistema(
+                user.getUsername(),
+                user.getPassword(),
+                user.getRole()
+        );
+
         return Map.of(
                 "mensaje",
-                "Usuario registrado o resincronizado correctamente con Keycloak."
+                "Usuario registrado correctamente en Keycloak, tabla users y USUARIO_SISTEMA de Oracle DBII."
         );
     }
 
@@ -120,9 +129,15 @@ public class GestionarUsuariosService implements GestionarUsuariosUseCase {
         user.setPassword(codificarPasswordPort.codificar(nuevaPasswordTemporal));
         gestionarUsuariosPort.guardar(user);
 
+        dbiiSincronizacionService.sincronizarUsuarioSistema(
+                user.getUsername(),
+                user.getPassword(),
+                user.getRole()
+        );
+
         return Map.of(
                 "mensaje",
-                "Por seguridad, el sistema ya no entrega contraseñas temporales. Use el restablecimiento seguro."
+                "Contraseña temporal generada y sincronizada en USUARIO_SISTEMA de Oracle DBII."
         );
     }
 
@@ -164,9 +179,15 @@ public class GestionarUsuariosService implements GestionarUsuariosUseCase {
         user.setPassword(codificarPasswordPort.codificar(nuevaPassword));
         gestionarUsuariosPort.guardar(user);
 
+        dbiiSincronizacionService.sincronizarUsuarioSistema(
+                user.getUsername(),
+                user.getPassword(),
+                user.getRole()
+        );
+
         return Map.of(
                 "mensaje",
-                "Contraseña restablecida correctamente."
+                "Contraseña restablecida correctamente y sincronizada en USUARIO_SISTEMA de Oracle DBII."
         );
     }
 
