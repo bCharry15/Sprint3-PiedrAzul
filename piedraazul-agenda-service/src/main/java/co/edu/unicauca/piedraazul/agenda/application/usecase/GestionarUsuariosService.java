@@ -1,7 +1,7 @@
 package co.edu.unicauca.piedraazul.agenda.application.usecase;
 
-import java.security.SecureRandom;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
@@ -13,10 +13,12 @@ import co.edu.unicauca.piedraazul.agenda.domain.port.out.AutenticarUsuarioPort;
 import co.edu.unicauca.piedraazul.agenda.domain.port.out.CodificarPasswordPort;
 import co.edu.unicauca.piedraazul.agenda.domain.port.out.GestionarUsuariosPort;
 import co.edu.unicauca.piedraazul.agenda.domain.port.out.RegistrarUsuarioKeycloakPort;
+import co.edu.unicauca.piedraazul.agenda.model.Paciente;
 import co.edu.unicauca.piedraazul.agenda.model.User;
 import co.edu.unicauca.piedraazul.agenda.model.enums.UserRole;
 import co.edu.unicauca.piedraazul.agenda.model.enums.UserStatus;
 import co.edu.unicauca.piedraazul.agenda.repository.PacienteRepository;
+import co.edu.unicauca.piedraazul.agenda.repository.UserRepository;
 
 @Service
 public class GestionarUsuariosService implements GestionarUsuariosUseCase {
@@ -25,17 +27,22 @@ public class GestionarUsuariosService implements GestionarUsuariosUseCase {
     private final CodificarPasswordPort codificarPasswordPort;
     private final AutenticarUsuarioPort autenticarUsuarioPort;
     private final RegistrarUsuarioKeycloakPort registrarUsuarioKeycloakPort;
+    private final UserRepository userRepository;
     private final PacienteRepository pacienteRepository;
 
-    public GestionarUsuariosService(GestionarUsuariosPort gestionarUsuariosPort,
-                                    CodificarPasswordPort codificarPasswordPort,
-                                    AutenticarUsuarioPort autenticarUsuarioPort,
-                                    RegistrarUsuarioKeycloakPort registrarUsuarioKeycloakPort,
-                                    PacienteRepository pacienteRepository) {
+    public GestionarUsuariosService(
+            GestionarUsuariosPort gestionarUsuariosPort,
+            CodificarPasswordPort codificarPasswordPort,
+            AutenticarUsuarioPort autenticarUsuarioPort,
+            RegistrarUsuarioKeycloakPort registrarUsuarioKeycloakPort,
+            UserRepository userRepository,
+            PacienteRepository pacienteRepository
+    ) {
         this.gestionarUsuariosPort = gestionarUsuariosPort;
         this.codificarPasswordPort = codificarPasswordPort;
         this.autenticarUsuarioPort = autenticarUsuarioPort;
         this.registrarUsuarioKeycloakPort = registrarUsuarioKeycloakPort;
+        this.userRepository = userRepository;
         this.pacienteRepository = pacienteRepository;
     }
 
@@ -53,7 +60,7 @@ public class GestionarUsuariosService implements GestionarUsuariosUseCase {
 
         Map<String, Object> respuesta = new HashMap<>(tokenKeycloak);
         respuesta.put("username", usernameNormalizado);
-        respuesta.put("mensaje", "Autenticación exitosa con Keycloak.");
+        respuesta.put("mensaje", "Autenticacion exitosa con Keycloak.");
 
         gestionarUsuariosPort.buscarPorUsername(usernameNormalizado)
                 .ifPresent(user -> {
@@ -61,7 +68,7 @@ public class GestionarUsuariosService implements GestionarUsuariosUseCase {
                     respuesta.put("status", user.getStatus().name());
                 });
 
-        respuesta.putIfAbsent("role", "ADMIN");
+        respuesta.putIfAbsent("role", obtenerRolPorUsername(usernameNormalizado));
         respuesta.putIfAbsent("status", "ACTIVE");
 
         return respuesta;
@@ -74,16 +81,6 @@ public class GestionarUsuariosService implements GestionarUsuariosUseCase {
         validarTexto(role, "El rol es obligatorio.");
 
         String usernameNormalizado = username.trim();
-
-        if (gestionarUsuariosPort.buscarPorUsername(usernameNormalizado).isPresent()) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "El usuario ya existe."
-            );
-        }
-
-        validarPasswordSegura(password);
-
         UserRole userRole = convertirRol(role);
 
         registrarUsuarioKeycloakPort.registrarUsuario(
@@ -92,7 +89,9 @@ public class GestionarUsuariosService implements GestionarUsuariosUseCase {
                 userRole.name()
         );
 
-        User user = new User();
+        User user = gestionarUsuariosPort.buscarPorUsername(usernameNormalizado)
+                .orElseGet(User::new);
+
         user.setUsername(usernameNormalizado);
         user.setPassword(codificarPasswordPort.codificar(password));
         user.setRole(userRole);
@@ -102,23 +101,24 @@ public class GestionarUsuariosService implements GestionarUsuariosUseCase {
 
         return Map.of(
                 "mensaje",
-                "Usuario registrado correctamente y sincronizado con Keycloak."
+                "Usuario registrado o resincronizado correctamente con Keycloak."
         );
     }
 
     @Override
     public Map<String, String> generarPasswordTemporal(String username) {
-        /*
-         * Se conserva el método por compatibilidad con el contrato anterior,
-         * pero ya no se retorna ninguna contraseña temporal al cliente.
-         */
         validarTexto(username, "El username es obligatorio.");
 
-        gestionarUsuariosPort.buscarPorUsername(username.trim())
+        User user = gestionarUsuariosPort.buscarPorUsername(username.trim())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "No existe un usuario con ese username."
                 ));
+
+        String nuevaPasswordTemporal = generarPasswordTemporalInterna();
+
+        user.setPassword(codificarPasswordPort.codificar(nuevaPasswordTemporal));
+        gestionarUsuariosPort.guardar(user);
 
         return Map.of(
                 "mensaje",
@@ -127,46 +127,71 @@ public class GestionarUsuariosService implements GestionarUsuariosUseCase {
     }
 
     @Override
-public Map<String, String> restablecerPasswordSeguro(String username,
-                                                     String numeroDocumento,
-                                                     String nuevaPassword) {
-    validarTexto(username, "El username es obligatorio.");
-    validarTexto(numeroDocumento, "El número de documento es obligatorio.");
-    validarTexto(nuevaPassword, "La nueva contraseña es obligatoria.");
-    validarPasswordSegura(nuevaPassword);
+    public Map<String, String> restablecerPasswordSeguro(
+            String username,
+            String numeroDocumento,
+            String nuevaPassword
+    ) {
+        validarTexto(username, "El username es obligatorio.");
+        validarTexto(numeroDocumento, "El numero de documento es obligatorio.");
+        validarTexto(nuevaPassword, "La nueva contraseña es obligatoria.");
+        validarPasswordSegura(nuevaPassword);
 
-    String usernameNormalizado = username.trim();
-    String documentoNormalizado = normalizarDocumento(numeroDocumento);
+        String usernameNormalizado = username.trim();
+        String documentoNormalizado = normalizarDocumento(numeroDocumento);
 
-    User user = gestionarUsuariosPort.buscarPorUsername(usernameNormalizado)
-            .orElseThrow(() -> new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "No existe un usuario con ese username."
-            ));
+        User user = gestionarUsuariosPort.buscarPorUsername(usernameNormalizado)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe un usuario con ese username."
+                ));
 
-    if (user.getRole() == UserRole.PACIENTE) {
-        pacienteRepository.findByNumeroDocumento(documentoNormalizado)
+        Paciente paciente = pacienteRepository.findByUsername(usernameNormalizado)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
-                        "Los datos de verificación no coinciden con un paciente registrado."
+                        "No existe un paciente asociado a ese usuario."
                 ));
+
+        String documentoPaciente = normalizarDocumento(paciente.getNumeroDocumento());
+
+        if (!documentoPaciente.equals(documentoNormalizado)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El numero de documento no coincide con el usuario."
+            );
+        }
+
+        user.setPassword(codificarPasswordPort.codificar(nuevaPassword));
+        gestionarUsuariosPort.guardar(user);
+
+        return Map.of(
+                "mensaje",
+                "Contraseña restablecida correctamente."
+        );
     }
 
-    registrarUsuarioKeycloakPort.actualizarPassword(
-            usernameNormalizado,
-            nuevaPassword,
-            false
-    );
+    @Override
+    public List<Map<String, Object>> listarUsuariosPorRol(String role) {
+        validarTexto(role, "El rol es obligatorio.");
 
-    user.setPassword(codificarPasswordPort.codificar(nuevaPassword));
-    user.setStatus(UserStatus.ACTIVE);
-    gestionarUsuariosPort.guardar(user);
+        UserRole userRole = convertirRol(role);
 
-    return Map.of(
-            "mensaje",
-            "La contraseña fue restablecida correctamente. Ya puede iniciar sesión con la nueva contraseña."
-    );
-}
+        return userRepository.findByRoleOrderByUsernameAsc(userRole)
+                .stream()
+                .map(this::convertirUsuarioARespuestaSegura)
+                .toList();
+    }
+
+    private Map<String, Object> convertirUsuarioARespuestaSegura(User user) {
+        Map<String, Object> response = new HashMap<>();
+
+        response.put("id", user.getId());
+        response.put("username", user.getUsername());
+        response.put("role", user.getRole() != null ? user.getRole().name() : "");
+        response.put("status", user.getStatus() != null ? user.getStatus().name() : "");
+
+        return response;
+    }
 
     private void validarTexto(String valor, String mensaje) {
         if (valor == null || valor.trim().isEmpty()) {
@@ -175,10 +200,21 @@ public Map<String, String> restablecerPasswordSeguro(String username,
     }
 
     private void validarPasswordSegura(String password) {
-        if (password == null || password.trim().length() < 6) {
+        if (password.length() < 8) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "La contraseña debe tener mínimo 6 caracteres."
+                    "La contraseña debe tener minimo 8 caracteres."
+            );
+        }
+
+        boolean tieneMayuscula = password.matches(".*[A-Z].*");
+        boolean tieneMinuscula = password.matches(".*[a-z].*");
+        boolean tieneNumero = password.matches(".*\\d.*");
+
+        if (!tieneMayuscula || !tieneMinuscula || !tieneNumero) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La contraseña debe tener mayusculas, minusculas y numeros."
             );
         }
     }
@@ -189,22 +225,37 @@ public Map<String, String> restablecerPasswordSeguro(String username,
         } catch (Exception ex) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Rol inválido. Valores permitidos: ADMIN, AGENDADOR, MEDICO, PACIENTE."
+                    "Rol invalido. Valores permitidos: ADMIN, AGENDADOR, MEDICO, PACIENTE."
             );
         }
     }
 
+    private String normalizarDocumento(String numeroDocumento) {
+        return numeroDocumento == null ? "" : numeroDocumento.replaceAll("\\s+", "").trim();
+    }
+
     private String generarPasswordTemporalInterna() {
-        SecureRandom random = new SecureRandom();
-        int numero = random.nextInt(900000) + 100000;
+        int numero = (int) (Math.random() * 900000) + 100000;
         return "Temp" + numero;
     }
 
-    private String normalizarDocumento(String numeroDocumento) {
-    if (numeroDocumento == null) {
-        return "";
-    }
+    private String obtenerRolPorUsername(String username) {
+        if ("admin".equalsIgnoreCase(username)) {
+            return "ADMIN";
+        }
 
-    return numeroDocumento.trim().replaceAll("[^0-9A-Za-z]", "");
-}
+        if ("agendador".equalsIgnoreCase(username)) {
+            return "AGENDADOR";
+        }
+
+        if ("medico".equalsIgnoreCase(username)) {
+            return "MEDICO";
+        }
+
+        if ("paciente".equalsIgnoreCase(username)) {
+            return "PACIENTE";
+        }
+
+        return "SIN_ROL_LOCAL";
+    }
 }

@@ -63,8 +63,9 @@ services:
       SPRING_DATASOURCE_USERNAME: PIEDRAAZUL
       SPRING_DATASOURCE_PASSWORD: piedraazul
 
-      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/PiedrAzul
       KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/PiedrAzul/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/PiedrAzul/protocol/openid-connect/certs
+
       KEYCLOAK_TOKEN_URI: http://keycloak:8080/realms/PiedrAzul/protocol/openid-connect/token
       KEYCLOAK_CLIENT_ID: agenda-service
 

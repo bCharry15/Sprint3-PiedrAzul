@@ -1,5 +1,6 @@
 package co.edu.unicauca.piedraazul.agenda.domain.port.in;
 
+import java.util.List;
 import java.util.Map;
 
 public interface GestionarUsuariosUseCase {
@@ -10,5 +11,11 @@ public interface GestionarUsuariosUseCase {
 
     Map<String, String> generarPasswordTemporal(String username);
 
-    Map<String, String> restablecerPasswordSeguro(String username, String numeroDocumento, String nuevaPassword);
+    Map<String, String> restablecerPasswordSeguro(
+            String username,
+            String numeroDocumento,
+            String nuevaPassword
+    );
+
+    List<Map<String, Object>> listarUsuariosPorRol(String role);
 }
