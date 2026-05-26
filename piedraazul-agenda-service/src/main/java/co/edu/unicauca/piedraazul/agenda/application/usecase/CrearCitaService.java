@@ -26,6 +26,7 @@ import co.edu.unicauca.piedraazul.agenda.model.Medico;
 import co.edu.unicauca.piedraazul.agenda.model.Paciente;
 import co.edu.unicauca.piedraazul.agenda.model.enums.EstadoCita;
 import co.edu.unicauca.piedraazul.agenda.model.enums.Genero;
+import jakarta.transaction.Transactional;
 
 @Service
 public class CrearCitaService implements CrearCitaUseCase {
@@ -80,6 +81,7 @@ public class CrearCitaService implements CrearCitaUseCase {
     }
 
     @Override
+    @Transactional
     public CitaResponse crearCita(CrearCitaCommand command) {
         validarSolicitudCrearCita(command);
         validarFechaNoFestiva(command.getFecha());
