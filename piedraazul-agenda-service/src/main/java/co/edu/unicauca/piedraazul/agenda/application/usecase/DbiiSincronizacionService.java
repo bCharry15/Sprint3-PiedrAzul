@@ -1,18 +1,29 @@
 package co.edu.unicauca.piedraazul.agenda.application.usecase;
 
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Types;
+
+import javax.sql.DataSource;
+
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import co.edu.unicauca.piedraazul.agenda.model.Medico;
+import co.edu.unicauca.piedraazul.agenda.model.User;
 import co.edu.unicauca.piedraazul.agenda.model.enums.UserRole;
 
 @Service
 public class DbiiSincronizacionService {
 
     private final JdbcTemplate jdbcTemplate;
+    private final DataSource dataSource;
 
-    public DbiiSincronizacionService(JdbcTemplate jdbcTemplate) {
+    public DbiiSincronizacionService(JdbcTemplate jdbcTemplate, DataSource dataSource) {
         this.jdbcTemplate = jdbcTemplate;
+        this.dataSource = dataSource;
     }
 
     public void sincronizarUsuarioSistema(String username, String clave, UserRole role) {
@@ -64,7 +75,7 @@ public class DbiiSincronizacionService {
                     WHERE ID_USUARIO = ?
                     """,
                     claveNormalizada,
-                    construirNombreCompleto(usernameNormalizado, role),
+                    construirNombreCompletoUsuario(usernameNormalizado, role),
                     construirEmailAcademico(usernameNormalizado),
                     idRol,
                     idUsuario
@@ -73,7 +84,7 @@ public class DbiiSincronizacionService {
             registrarAuditoriaUsuario(
                     idUsuario,
                     "SINCRONIZAR_USUARIO",
-                    "Usuario actualizado desde la aplicación principal: " + usernameNormalizado
+                    "Usuario actualizado desde la aplicacion principal: " + usernameNormalizado
             );
 
         } else {
@@ -95,7 +106,7 @@ public class DbiiSincronizacionService {
                     idUsuario,
                     usernameNormalizado,
                     claveNormalizada,
-                    construirNombreCompleto(usernameNormalizado, role),
+                    construirNombreCompletoUsuario(usernameNormalizado, role),
                     construirEmailAcademico(usernameNormalizado),
                     idRol
             );
@@ -103,7 +114,181 @@ public class DbiiSincronizacionService {
             registrarAuditoriaUsuario(
                     idUsuario,
                     "CREAR_USUARIO",
-                    "Usuario creado desde la aplicación principal: " + usernameNormalizado
+                    "Usuario creado desde la aplicacion principal: " + usernameNormalizado
+            );
+        }
+    }
+
+    public void sincronizarMedicoTerapeuta(Medico medico) {
+        if (medico == null) {
+            throw new IllegalArgumentException("El medico es obligatorio para sincronizar con MEDICO_TERAPISTA.");
+        }
+
+        User user = medico.getUser();
+
+        if (user == null || user.getUsername() == null || user.getUsername().trim().isEmpty()) {
+            throw new IllegalArgumentException("El medico debe tener usuario asociado para sincronizar con MEDICO_TERAPISTA.");
+        }
+
+        String username = user.getUsername().trim();
+        String documento = generarDocumentoMedico(username);
+        String email = construirEmailAcademico(username);
+        String telefono = "3000000000";
+        String tipoProfesional = limitarTexto(medico.getEspecialidad(), 50);
+        Integer intervalo = medico.getIntervaloMinutos() != null ? medico.getIntervaloMinutos() : 15;
+
+        NombreDividido nombreDividido = dividirNombreCompleto(medico.getNombreCompleto(), username);
+
+        Long cantidadExistente = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM MEDICO_TERAPISTA
+                WHERE NUM_DOCUMENTO = ?
+                   OR LOWER(EMAIL) = LOWER(?)
+                """,
+                Long.class,
+                documento,
+                email
+        );
+
+        Long idUsuarioSistema = obtenerIdUsuarioSistema(username);
+
+        if (cantidadExistente != null && cantidadExistente > 0) {
+            Long idMedicoDbii = jdbcTemplate.queryForObject(
+                    """
+                    SELECT ID_MEDICO
+                    FROM MEDICO_TERAPISTA
+                    WHERE NUM_DOCUMENTO = ?
+                       OR LOWER(EMAIL) = LOWER(?)
+                    FETCH FIRST 1 ROWS ONLY
+                    """,
+                    Long.class,
+                    documento,
+                    email
+            );
+
+            jdbcTemplate.update(
+                    """
+                    UPDATE MEDICO_TERAPISTA
+                    SET TIPO_DOCUMENTO = 'CC',
+                        NUM_DOCUMENTO = ?,
+                        NOMBRES = ?,
+                        APELLIDOS = ?,
+                        TIPO_PROFESIONAL = ?,
+                        INTERVALO_MINUTOS = ?,
+                        TELEFONO = ?,
+                        EMAIL = ?,
+                        ESTADO = 'A'
+                    WHERE ID_MEDICO = ?
+                    """,
+                    documento,
+                    nombreDividido.nombres(),
+                    nombreDividido.apellidos(),
+                    tipoProfesional,
+                    intervalo,
+                    telefono,
+                    email,
+                    idMedicoDbii
+            );
+
+            registrarAuditoriaUsuario(
+                    idUsuarioSistema,
+                    "SINCRONIZAR_MEDICO",
+                    "Medico actualizado desde la aplicacion principal: " + medico.getNombreCompleto()
+            );
+
+            System.out.println("DBII-SYNC -> Medico actualizado en MEDICO_TERAPISTA. ID: " + idMedicoDbii);
+            return;
+        }
+
+        Long idMedicoGenerado = insertarMedicoConProcedimiento(
+                documento,
+                nombreDividido.nombres(),
+                nombreDividido.apellidos(),
+                tipoProfesional,
+                intervalo,
+                telefono,
+                email
+        );
+
+        registrarAuditoriaUsuario(
+                idUsuarioSistema,
+                "CREAR_MEDICO",
+                "Medico creado desde la aplicacion principal: " + medico.getNombreCompleto()
+        );
+
+        System.out.println("DBII-SYNC -> Medico creado en MEDICO_TERAPISTA usando PKG_GESTION_MEDICOS.INSERTAR_MEDICO. ID: "
+                + idMedicoGenerado);
+    }
+
+    public void desactivarMedicoTerapeuta(Medico medico) {
+        if (medico == null || medico.getUser() == null || medico.getUser().getUsername() == null) {
+            return;
+        }
+
+        String username = medico.getUser().getUsername().trim();
+        String documento = generarDocumentoMedico(username);
+        String email = construirEmailAcademico(username);
+
+        int filas = jdbcTemplate.update(
+                """
+                UPDATE MEDICO_TERAPISTA
+                SET ESTADO = 'I'
+                WHERE NUM_DOCUMENTO = ?
+                   OR LOWER(EMAIL) = LOWER(?)
+                """,
+                documento,
+                email
+        );
+
+        if (filas > 0) {
+            registrarAuditoriaUsuario(
+                    obtenerIdUsuarioSistema(username),
+                    "DESACTIVAR_MEDICO",
+                    "Medico desactivado desde la aplicacion principal: " + medico.getNombreCompleto()
+            );
+        }
+    }
+
+    private Long insertarMedicoConProcedimiento(
+            String numDocumento,
+            String nombres,
+            String apellidos,
+            String tipoProfesional,
+            Integer intervaloMinutos,
+            String telefono,
+            String email
+    ) {
+        String llamada = "{call PKG_GESTION_MEDICOS.INSERTAR_MEDICO(?,?,?,?,?,?,?,?,?)}";
+
+        try (
+                Connection connection = dataSource.getConnection();
+                CallableStatement cs = connection.prepareCall(llamada)
+        ) {
+            cs.setString(1, "CC");
+            cs.setString(2, limitarTexto(numDocumento, 20));
+            cs.setString(3, limitarTexto(nombres, 60));
+            cs.setString(4, limitarTexto(apellidos, 60));
+            cs.setString(5, limitarTexto(tipoProfesional, 50));
+            cs.setInt(6, intervaloMinutos);
+            cs.setString(7, limitarTexto(telefono, 15));
+            cs.setString(8, limitarTexto(email, 100));
+            cs.registerOutParameter(9, Types.NUMERIC);
+
+            cs.execute();
+
+            Number id = (Number) cs.getObject(9);
+
+            if (id == null) {
+                throw new IllegalStateException("El procedimiento PKG_GESTION_MEDICOS.INSERTAR_MEDICO no retorno ID.");
+            }
+
+            return id.longValue();
+
+        } catch (SQLException ex) {
+            throw new IllegalStateException(
+                    "Error ejecutando PKG_GESTION_MEDICOS.INSERTAR_MEDICO: " + ex.getMessage(),
+                    ex
             );
         }
     }
@@ -111,8 +296,8 @@ public class DbiiSincronizacionService {
     private void asegurarRolesBase() {
         asegurarRol(1, "ADMINISTRADOR", "Administra todo el sistema");
         asegurarRol(2, "AGENDADOR", "Gestiona citas y pacientes");
-        asegurarRol(3, "MEDICO", "Atiende pacientes y registra historia clínica");
-        asegurarRol(4, "PACIENTE", "Paciente con acceso al agendamiento autónomo");
+        asegurarRol(3, "MEDICO", "Atiende pacientes y registra historia clinica");
+        asegurarRol(4, "PACIENTE", "Paciente con acceso al agendamiento autonomo");
     }
 
     private void asegurarRol(int idRol, String nombre, String descripcion) {
@@ -169,11 +354,24 @@ public class DbiiSincronizacionService {
                 Long.class
         );
 
-        if (siguienteId == null) {
-            return 1L;
-        }
+        return siguienteId != null ? siguienteId : 1L;
+    }
 
-        return siguienteId;
+    private Long obtenerIdUsuarioSistema(String username) {
+        try {
+            return jdbcTemplate.queryForObject(
+                    """
+                    SELECT ID_USUARIO
+                    FROM USUARIO_SISTEMA
+                    WHERE LOWER(NOMBRE_USUARIO) = LOWER(?)
+                    FETCH FIRST 1 ROWS ONLY
+                    """,
+                    Long.class,
+                    username
+            );
+        } catch (DataAccessException ex) {
+            return null;
+        }
     }
 
     private void registrarAuditoriaUsuario(Long idUsuario, String accion, String descripcion) {
@@ -197,23 +395,37 @@ public class DbiiSincronizacionService {
                         ?,
                         SYSDATE,
                         ?,
-                        'USUARIO_SISTEMA',
+                        ?,
                         ?
                     )
                     """,
                     idUsuario,
-                    accion,
-                    limitarTexto(descripcion, 300)
+                    limitarTexto(accion, 50),
+                    obtenerTablaAfectadaPorAccion(accion),
+                    limitarTexto(descripcion, 200)
             );
         } catch (DataAccessException ex) {
-            System.out.println(
-                    "DBII-SYNC -> No se pudo registrar auditoría de usuario: "
-                            + ex.getMessage()
-            );
+            System.out.println("DBII-SYNC -> No se pudo registrar auditoria: " + ex.getMessage());
         }
     }
 
-    private String construirNombreCompleto(String username, UserRole role) {
+    private String obtenerTablaAfectadaPorAccion(String accion) {
+        if (accion == null) {
+            return "DBII";
+        }
+
+        if (accion.contains("MEDICO")) {
+            return "MEDICO_TERAPISTA";
+        }
+
+        if (accion.contains("USUARIO")) {
+            return "USUARIO_SISTEMA";
+        }
+
+        return "DBII";
+    }
+
+    private String construirNombreCompletoUsuario(String username, UserRole role) {
         String rolLegible = switch (role) {
             case ADMIN -> "Administrador";
             case AGENDADOR -> "Agendador";
@@ -236,21 +448,63 @@ public class DbiiSincronizacionService {
         return limitarTexto(usuarioLimpio + "@piedraazul.local", 100);
     }
 
+    private String generarDocumentoMedico(String username) {
+        long hash = Math.abs((long) username.toLowerCase().hashCode());
+        return limitarTexto("MED" + hash, 20);
+    }
+
+    private NombreDividido dividirNombreCompleto(String nombreCompleto, String usernameFallback) {
+        String nombre = nombreCompleto == null || nombreCompleto.trim().isEmpty()
+                ? usernameFallback
+                : nombreCompleto.trim();
+
+        String[] partes = nombre.split("\\s+");
+
+        if (partes.length == 1) {
+            return new NombreDividido(
+                    limitarTexto(partes[0], 60),
+                    limitarTexto(usernameFallback, 60)
+            );
+        }
+
+        StringBuilder nombres = new StringBuilder();
+
+        for (int i = 0; i < partes.length - 1; i++) {
+            if (!nombres.isEmpty()) {
+                nombres.append(" ");
+            }
+
+            nombres.append(partes[i]);
+        }
+
+        String apellidos = partes[partes.length - 1];
+
+        return new NombreDividido(
+                limitarTexto(nombres.toString(), 60),
+                limitarTexto(apellidos, 60)
+        );
+    }
+
     private String limitarTexto(String valor, int longitudMaxima) {
         if (valor == null) {
             return "";
         }
 
-        if (valor.length() <= longitudMaxima) {
-            return valor;
+        String valorLimpio = valor.trim();
+
+        if (valorLimpio.length() <= longitudMaxima) {
+            return valorLimpio;
         }
 
-        return valor.substring(0, longitudMaxima);
+        return valorLimpio.substring(0, longitudMaxima);
     }
 
     private void validarTexto(String valor, String mensaje) {
         if (valor == null || valor.trim().isEmpty()) {
             throw new IllegalArgumentException(mensaje);
         }
+    }
+
+    private record NombreDividido(String nombres, String apellidos) {
     }
 }
