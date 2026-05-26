@@ -1,33 +1,16 @@
 services:
-  mariadb-agenda:
-    image: mariadb:11.4
-    container_name: piedraazul-mariadb-agenda
+  oracle-db:
+    image: gvenzl/oracle-xe:21-slim
+    container_name: piedraazul-oracle-db
     restart: unless-stopped
     environment:
-      MARIADB_ROOT_PASSWORD: root
-      MARIADB_DATABASE: piedraazul_agenda
-      MARIADB_USER: piedraazul
-      MARIADB_PASSWORD: piedraazul
+      ORACLE_PASSWORD: oracle
+      APP_USER: PIEDRAAZUL
+      APP_USER_PASSWORD: piedraazul
     ports:
-      - "3307:3306"
+      - "1522:1521"
     volumes:
-      - mariadb_agenda_data:/var/lib/mysql
-    networks:
-      - piedraazul-network
-
-  mariadb-notification:
-    image: mariadb:11.4
-    container_name: piedraazul-mariadb-notification
-    restart: unless-stopped
-    environment:
-      MARIADB_ROOT_PASSWORD: root
-      MARIADB_DATABASE: piedraazul_notifications
-      MARIADB_USER: piedraazul
-      MARIADB_PASSWORD: piedraazul
-    ports:
-      - "3308:3306"
-    volumes:
-      - mariadb_notification_data:/var/lib/mysql
+      - oracle_data:/opt/oracle/oradata
     networks:
       - piedraazul-network
 
@@ -53,10 +36,10 @@ services:
     container_name: piedraazul-notification-service
     restart: unless-stopped
     depends_on:
-      - mariadb-notification
+      - oracle-db
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb-notification:3306/piedraazul_notifications
-      SPRING_DATASOURCE_USERNAME: piedraazul
+      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@//oracle-db:1521/XEPDB1
+      SPRING_DATASOURCE_USERNAME: PIEDRAAZUL
       SPRING_DATASOURCE_PASSWORD: piedraazul
       NOTIFICATION_MAIL_ENABLED: "false"
       NOTIFICATION_MAIL_FROM: no-reply@piedraazul.com
@@ -72,12 +55,12 @@ services:
     container_name: piedraazul-agenda-service
     restart: unless-stopped
     depends_on:
-      - mariadb-agenda
+      - oracle-db
       - keycloak
       - notification-service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb-agenda:3306/piedraazul_agenda
-      SPRING_DATASOURCE_USERNAME: piedraazul
+      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@//oracle-db:1521/XEPDB1
+      SPRING_DATASOURCE_USERNAME: PIEDRAAZUL
       SPRING_DATASOURCE_PASSWORD: piedraazul
 
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/PiedrAzul
@@ -98,8 +81,7 @@ services:
       - piedraazul-network
 
 volumes:
-  mariadb_agenda_data:
-  mariadb_notification_data:
+  oracle_data:
 
 networks:
   piedraazul-network:
