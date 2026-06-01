@@ -1,10 +1,10 @@
 package co.edu.unicauca.piedraazul.controller;
 
-import co.edu.unicauca.piedraazul.model.Cita;
-import co.edu.unicauca.piedraazul.model.enums.Genero;
+import co.edu.unicauca.piedraazul.client.AgendaServiceClient;
 import co.edu.unicauca.piedraazul.model.Medico;
 import co.edu.unicauca.piedraazul.model.Paciente;
 import co.edu.unicauca.piedraazul.model.dto.CitaTablaModel;
+import co.edu.unicauca.piedraazul.model.enums.Genero;
 import co.edu.unicauca.piedraazul.service.ICitaService;
 import co.edu.unicauca.piedraazul.service.IMedicoService;
 import co.edu.unicauca.piedraazul.service.IPacienteService;
@@ -15,8 +15,13 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+import javafx.stage.Window;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -64,29 +69,32 @@ public class AgendadorPanelController {
     @FXML private TableColumn<CitaTablaModel, String> horaColumn;
     @FXML private TableColumn<CitaTablaModel, String> estadoColumn;
 
-    // ── Dependencias (interfaces — principio D) ───────────────────────────────
-    private final SceneManager    sceneManager;
+    // ── Dependencias ──────────────────────────────────────────────────────────
+    private final SceneManager sceneManager;
     private final IPacienteService pacienteService;
-    private final IMedicoService   medicoService;
-    private final ICitaService     citaService;
+    private final IMedicoService medicoService;
+    private final ICitaService citaService;
+    private final AgendaServiceClient agendaServiceClient;
 
-    private static final DateTimeFormatter FORMATO_HORA   = DateTimeFormatter.ofPattern("HH:mm");
-    private static final LocalTime HORA_INICIO_MANANA     = LocalTime.of(8, 0);
-    private static final LocalTime HORA_FIN_MANANA        = LocalTime.of(12, 0);
-    private static final LocalTime HORA_INICIO_TARDE      = LocalTime.of(14, 0);
-    private static final LocalTime HORA_FIN_TARDE         = LocalTime.of(18, 0);
-    private static final Pattern   SOLO_NUMEROS           = Pattern.compile("\\d+");
-    private static final Pattern   CORREO_VALIDO          =
+    private static final DateTimeFormatter FORMATO_HORA = DateTimeFormatter.ofPattern("HH:mm");
+    private static final LocalTime HORA_INICIO_MANANA = LocalTime.of(8, 0);
+    private static final LocalTime HORA_FIN_MANANA = LocalTime.of(12, 0);
+    private static final LocalTime HORA_INICIO_TARDE = LocalTime.of(14, 0);
+    private static final LocalTime HORA_FIN_TARDE = LocalTime.of(18, 0);
+    private static final Pattern SOLO_NUMEROS = Pattern.compile("\\d+");
+    private static final Pattern CORREO_VALIDO =
             Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
     public AgendadorPanelController(SceneManager sceneManager,
                                     IPacienteService pacienteService,
                                     IMedicoService medicoService,
-                                    ICitaService citaService) {
-        this.sceneManager    = sceneManager;
+                                    ICitaService citaService,
+                                    AgendaServiceClient agendaServiceClient) {
+        this.sceneManager = sceneManager;
         this.pacienteService = pacienteService;
-        this.medicoService   = medicoService;
-        this.citaService     = citaService;
+        this.medicoService = medicoService;
+        this.citaService = citaService;
+        this.agendaServiceClient = agendaServiceClient;
     }
 
     // ── Inicialización ────────────────────────────────────────────────────────
@@ -147,7 +155,7 @@ public class AgendadorPanelController {
         activarBoton(consultarCitasButton, crearCitaButton);
         tituloSeccionLabel.setText("Consulta de citas");
         subtituloSeccionLabel.setText(
-                "Aquí el agendador puede consultar las citas de un médico por fecha.");
+                "Aquí el agendador puede consultar y exportar las citas de cualquier médico por fecha.");
     }
 
     private void activarBoton(Button activo, Button inactivo) {
@@ -198,8 +206,8 @@ public class AgendadorPanelController {
 
     @FXML
     private void buscarCitas() {
-        Medico medico    = medicoBusquedaCombo.getValue();
-        LocalDate fecha  = fechaBusquedaPicker.getValue();
+        Medico medico = medicoBusquedaCombo.getValue();
+        LocalDate fecha = fechaBusquedaPicker.getValue();
 
         if (medico == null || fecha == null) {
             showAlert(Alert.AlertType.WARNING, "Validación",
@@ -228,6 +236,56 @@ public class AgendadorPanelController {
         if (filas.isEmpty()) {
             showAlert(Alert.AlertType.INFORMATION, "Sin resultados",
                     "No se encontraron citas para el médico y la fecha seleccionados.");
+        }
+    }
+
+    // ── Exportar CSV desde agendador ──────────────────────────────────────────
+
+    @FXML
+    private void exportarCsvAgendador() {
+        Medico medico = medicoBusquedaCombo.getValue();
+        LocalDate fecha = fechaBusquedaPicker.getValue();
+
+        if (medico == null || fecha == null) {
+            showAlert(Alert.AlertType.WARNING, "Validación",
+                    "Debe seleccionar médico y fecha antes de exportar.");
+            return;
+        }
+
+        try {
+            String contenidoCsv = agendaServiceClient.exportarCitasPorMedicoYFecha(medico.getId(), fecha);
+
+            if (contenidoCsv == null || contenidoCsv.trim().isEmpty()) {
+                showAlert(Alert.AlertType.INFORMATION,
+                        "Sin datos",
+                        "No hay citas para exportar en la fecha seleccionada.");
+                return;
+            }
+
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Guardar citas en CSV");
+            fileChooser.setInitialFileName("citas-agendador-medico-" + medico.getId() + "-" + fecha + ".csv");
+            fileChooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("Archivo CSV (*.csv)", "*.csv")
+            );
+
+            Window window = citasTable.getScene() != null ? citasTable.getScene().getWindow() : null;
+            File archivo = fileChooser.showSaveDialog(window);
+
+            if (archivo == null) {
+                return;
+            }
+
+            Files.writeString(archivo.toPath(), contenidoCsv, StandardCharsets.UTF_8);
+
+            showAlert(Alert.AlertType.INFORMATION,
+                    "Exportación exitosa",
+                    "El archivo CSV fue guardado correctamente en:\n\n" + archivo.getAbsolutePath());
+
+        } catch (Exception ex) {
+            showAlert(Alert.AlertType.ERROR,
+                    "Error exportando CSV",
+                    "No se pudo exportar el archivo CSV.\n\nDetalle: " + ex.getMessage());
         }
     }
 
@@ -301,8 +359,8 @@ public class AgendadorPanelController {
         horaCombo.getItems().clear();
         horaCombo.setValue(null);
 
-        Medico medico    = medicoCombo.getValue();
-        LocalDate fecha  = fechaCitaPicker.getValue();
+        Medico medico = medicoCombo.getValue();
+        LocalDate fecha = fechaCitaPicker.getValue();
         if (medico == null || fecha == null) return;
 
         if (fecha.isBefore(LocalDate.now())) {
@@ -337,12 +395,12 @@ public class AgendadorPanelController {
     private List<String> generarHorasPorIntervalo(int intervalo) {
         List<String> horas = new ArrayList<>();
         agregarRango(horas, HORA_INICIO_MANANA, HORA_FIN_MANANA, intervalo);
-        agregarRango(horas, HORA_INICIO_TARDE,  HORA_FIN_TARDE,  intervalo);
+        agregarRango(horas, HORA_INICIO_TARDE, HORA_FIN_TARDE, intervalo);
         return horas;
     }
 
     private void agregarRango(List<String> horas, LocalTime inicio,
-                               LocalTime fin, int intervalo) {
+                              LocalTime fin, int intervalo) {
         LocalTime actual = inicio;
         while (actual.isBefore(fin)) {
             horas.add(actual.format(FORMATO_HORA));

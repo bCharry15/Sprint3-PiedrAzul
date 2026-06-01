@@ -5,6 +5,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Controller;
 
@@ -16,22 +17,25 @@ import co.edu.unicauca.piedraazul.model.dto.DisponibilidadResponse;
 import co.edu.unicauca.piedraazul.model.dto.MedicoResponse;
 import co.edu.unicauca.piedraazul.model.enums.Genero;
 import co.edu.unicauca.piedraazul.service.IPacienteService;
-import co.edu.unicauca.piedraazul.util.DatePickerUtils;
 import co.edu.unicauca.piedraazul.util.SceneManager;
 import co.edu.unicauca.piedraazul.util.SesionUsuario;
 import co.edu.unicauca.piedraazul.util.Vista;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.DateCell;
 import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.util.StringConverter;
 
@@ -43,8 +47,10 @@ public class PacientePanelController {
     private final IPacienteService pacienteService;
 
     @FXML private ComboBox<MedicoResponse> cmbMedico;
+    @FXML private TextField txtFechaCitaVisible;
     @FXML private DatePicker dpFechaCita;
     @FXML private ComboBox<String> cmbHoraDisponible;
+    @FXML private Label lblEstadoDisponibilidad;
 
     @FXML private TextField txtNumeroDocumento;
     @FXML private ComboBox<String> cmbTipoDocumento;
@@ -75,6 +81,29 @@ public class PacientePanelController {
     @FXML private TableColumn<CitaResponse, String> historialEstadoColumn;
     @FXML private TableColumn<CitaResponse, String> historialObservacionColumn;
 
+    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    private static final Set<LocalDate> FESTIVOS_COLOMBIA_2026 = Set.of(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 1, 12),
+            LocalDate.of(2026, 3, 23),
+            LocalDate.of(2026, 4, 2),
+            LocalDate.of(2026, 4, 3),
+            LocalDate.of(2026, 5, 1),
+            LocalDate.of(2026, 5, 18),
+            LocalDate.of(2026, 6, 8),
+            LocalDate.of(2026, 6, 15),
+            LocalDate.of(2026, 6, 29),
+            LocalDate.of(2026, 7, 20),
+            LocalDate.of(2026, 8, 7),
+            LocalDate.of(2026, 8, 17),
+            LocalDate.of(2026, 10, 12),
+            LocalDate.of(2026, 11, 2),
+            LocalDate.of(2026, 11, 16),
+            LocalDate.of(2026, 12, 8),
+            LocalDate.of(2026, 12, 25)
+    );
+
     private boolean modoEdicionPerfil = false;
     private boolean perfilExiste = false;
     private boolean mensajePerfilIncompletoMostrado = false;
@@ -90,15 +119,193 @@ public class PacientePanelController {
     @FXML
     public void initialize() {
         configurarCalendarios();
+        configurarCampoFechaVisible();
         configurarCombos();
         configurarTablasCitas();
+        configurarCargaAutomaticaDisponibilidad();
+
         cargarMedicos();
         cargarDatosPacienteLogueado();
+
+        actualizarEstadoDisponibilidad("Seleccione médico/terapista y fecha para cargar las horas automáticamente.");
+        actualizarFechaSeleccionada();
     }
 
     private void configurarCalendarios() {
-        DatePickerUtils.configurarDatePicker(dpFechaNacimiento);
-        DatePickerUtils.configurarDatePicker(dpFechaCita);
+        configurarDatePickerBase(dpFechaCita);
+        configurarDatePickerBase(dpFechaNacimiento);
+
+        configurarCalendarioCita();
+        configurarCalendarioNacimiento();
+    }
+
+    private void configurarDatePickerBase(DatePicker datePicker) {
+        datePicker.setEditable(false);
+        datePicker.setPromptText("");
+
+        datePicker.setConverter(new StringConverter<LocalDate>() {
+            @Override
+            public String toString(LocalDate fecha) {
+                return fecha == null ? "" : fecha.format(FORMATO_FECHA);
+            }
+
+            @Override
+            public LocalDate fromString(String texto) {
+                if (texto == null || texto.trim().isEmpty()) {
+                    return null;
+                }
+
+                try {
+                    return LocalDate.parse(texto.trim(), FORMATO_FECHA);
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+        });
+
+        datePicker.setStyle(
+                "-fx-background-color: white;" +
+                "-fx-border-color: #2563eb;" +
+                "-fx-border-width: 1.5;" +
+                "-fx-border-radius: 8;" +
+                "-fx-background-radius: 8;" +
+                "-fx-font-size: 14px;"
+        );
+
+        if (datePicker.getEditor() != null) {
+            datePicker.getEditor().setStyle(
+                    "-fx-text-fill: transparent;" +
+                    "-fx-background-color: white;"
+            );
+            datePicker.getEditor().setOnMouseClicked(event -> datePicker.show());
+        }
+
+        datePicker.setOnMouseClicked(event -> datePicker.show());
+    }
+
+    private void configurarCampoFechaVisible() {
+        if (txtFechaCitaVisible == null) {
+            return;
+        }
+
+        txtFechaCitaVisible.setEditable(false);
+        txtFechaCitaVisible.setFocusTraversable(false);
+        txtFechaCitaVisible.setPromptText("Seleccione fecha");
+        txtFechaCitaVisible.setStyle(
+                "-fx-text-fill: #111827;" +
+                "-fx-background-color: white;" +
+                "-fx-font-weight: bold;" +
+                "-fx-font-size: 14px;" +
+                "-fx-border-color: #2563eb;" +
+                "-fx-border-width: 1.5;" +
+                "-fx-border-radius: 8;" +
+                "-fx-background-radius: 8;" +
+                "-fx-padding: 0 12 0 12;"
+        );
+
+        txtFechaCitaVisible.setOnMouseClicked(event -> {
+            if (dpFechaCita != null) {
+                dpFechaCita.show();
+            }
+        });
+    }
+
+    private void configurarCalendarioCita() {
+        dpFechaCita.setDayCellFactory(picker -> new DateCell() {
+            @Override
+            public void updateItem(LocalDate fecha, boolean empty) {
+                super.updateItem(fecha, empty);
+
+                setStyle("");
+                setTooltip(null);
+
+                if (empty || fecha == null) {
+                    return;
+                }
+
+                if (fecha.isBefore(LocalDate.now())) {
+                    setDisable(true);
+                    setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #94a3b8;");
+                    setTooltip(new Tooltip("Fecha pasada"));
+                    return;
+                }
+
+                if (esFestivo(fecha)) {
+                    setDisable(true);
+                    setStyle(
+                            "-fx-background-color: #fee2e2;" +
+                            "-fx-text-fill: #b91c1c;" +
+                            "-fx-font-weight: bold;" +
+                            "-fx-background-radius: 6;"
+                    );
+                    setTooltip(new Tooltip("Día festivo no disponible"));
+                    return;
+                }
+
+                if (fecha.equals(dpFechaCita.getValue())) {
+                    setStyle(
+                            "-fx-background-color: #2563eb;" +
+                            "-fx-text-fill: white;" +
+                            "-fx-font-weight: bold;" +
+                            "-fx-background-radius: 6;"
+                    );
+                    setTooltip(new Tooltip("Fecha seleccionada"));
+                    return;
+                }
+
+                if (fecha.equals(LocalDate.now())) {
+                    setStyle(
+                            "-fx-border-color: #2563eb;" +
+                            "-fx-border-width: 1;" +
+                            "-fx-border-radius: 6;" +
+                            "-fx-font-weight: bold;"
+                    );
+                    setTooltip(new Tooltip("Hoy"));
+                }
+            }
+        });
+    }
+
+    private void configurarCalendarioNacimiento() {
+        dpFechaNacimiento.setDayCellFactory(picker -> new DateCell() {
+            @Override
+            public void updateItem(LocalDate fecha, boolean empty) {
+                super.updateItem(fecha, empty);
+
+                setStyle("");
+                setTooltip(null);
+
+                if (empty || fecha == null) {
+                    return;
+                }
+
+                if (fecha.isAfter(LocalDate.now())) {
+                    setDisable(true);
+                    setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #94a3b8;");
+                    setTooltip(new Tooltip("La fecha de nacimiento no puede ser futura"));
+                    return;
+                }
+
+                if (fecha.equals(dpFechaNacimiento.getValue())) {
+                    setStyle(
+                            "-fx-background-color: #7c3aed;" +
+                            "-fx-text-fill: white;" +
+                            "-fx-font-weight: bold;" +
+                            "-fx-background-radius: 6;"
+                    );
+                    setTooltip(new Tooltip("Fecha seleccionada"));
+                }
+            }
+        });
+    }
+
+    private void configurarCargaAutomaticaDisponibilidad() {
+        cmbMedico.valueProperty().addListener((obs, anterior, actual) -> cargarDisponibilidadAutomatica());
+
+        dpFechaCita.valueProperty().addListener((obs, anterior, actual) -> {
+            actualizarFechaSeleccionada();
+            cargarDisponibilidadAutomatica();
+        });
     }
 
     private void configurarCombos() {
@@ -222,12 +429,6 @@ public class PacientePanelController {
 
         if (!mensajePerfilIncompletoMostrado) {
             mensajePerfilIncompletoMostrado = true;
-
-            /*
-             * Ya no mostramos alerta automática.
-             * El paciente simplemente queda con los campos habilitados
-             * para completar y guardar su perfil.
-             */
             System.out.println("PACIENTE-PANEL -> Perfil incompleto. El usuario debe completar y guardar sus datos.");
         }
     }
@@ -265,6 +466,7 @@ public class PacientePanelController {
     @FXML
     private void editarPerfil() {
         habilitarDatosPersonales();
+        actualizarEstadoDisponibilidad("Guarde su perfil antes de agendar citas.");
     }
 
     @FXML
@@ -314,11 +516,12 @@ public class PacientePanelController {
 
             bloquearDatosPersonales();
             consultarMisCitasSilencioso();
+            cargarDisponibilidadAutomatica();
 
             mostrarAlerta(Alert.AlertType.INFORMATION,
                     "Perfil guardado",
                     "Los datos personales fueron guardados correctamente.\n\n" +
-                            "Ahora puede consultar disponibilidad y agendar citas.");
+                            "Ahora puede seleccionar médico y fecha para cargar disponibilidad automáticamente.");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -393,7 +596,43 @@ public class PacientePanelController {
 
     @FXML
     private void consultarDisponibilidad() {
-        if (!validarPerfilAntesDeAgendar()) {
+        consultarDisponibilidad(true);
+    }
+
+    private void cargarDisponibilidadAutomatica() {
+        cmbHoraDisponible.getItems().clear();
+        cmbHoraDisponible.setValue(null);
+
+        if (!validarPerfilAntesDeAgendar(false)) {
+            actualizarEstadoDisponibilidad("Guarde su perfil antes de consultar disponibilidad.");
+            return;
+        }
+
+        MedicoResponse medicoSeleccionado = cmbMedico.getValue();
+        LocalDate fechaSeleccionada = obtenerFechaCitaSeleccionada();
+
+        if (medicoSeleccionado == null || fechaSeleccionada == null) {
+            actualizarEstadoDisponibilidad("Seleccione médico/terapista y fecha para cargar disponibilidad.");
+            return;
+        }
+
+        if (fechaSeleccionada.isBefore(LocalDate.now())) {
+            actualizarEstadoDisponibilidad("No se pueden seleccionar fechas pasadas.");
+            return;
+        }
+
+        if (esFestivo(fechaSeleccionada)) {
+            actualizarEstadoDisponibilidad(
+                    "La fecha " + fechaSeleccionada.format(FORMATO_FECHA) +
+                            " es festivo en Colombia. Seleccione otra fecha.");
+            return;
+        }
+
+        consultarDisponibilidad(false);
+    }
+
+    private void consultarDisponibilidad(boolean mostrarMensajes) {
+        if (!validarPerfilAntesDeAgendar(mostrarMensajes)) {
             return;
         }
 
@@ -407,9 +646,37 @@ public class PacientePanelController {
         LocalDate fechaSeleccionada = obtenerFechaCitaSeleccionada();
 
         if (medicoSeleccionado == null || fechaSeleccionada == null) {
-            mostrarAlerta(Alert.AlertType.WARNING,
-                    "Datos incompletos",
-                    "Debe seleccionar un médico/terapista y una fecha para consultar disponibilidad.");
+            actualizarEstadoDisponibilidad("Seleccione médico/terapista y fecha para cargar disponibilidad.");
+
+            if (mostrarMensajes) {
+                mostrarAlerta(Alert.AlertType.WARNING,
+                        "Datos incompletos",
+                        "Debe seleccionar un médico/terapista y una fecha para consultar disponibilidad.");
+            }
+            return;
+        }
+
+        if (fechaSeleccionada.isBefore(LocalDate.now())) {
+            actualizarEstadoDisponibilidad("No se pueden seleccionar fechas pasadas.");
+
+            if (mostrarMensajes) {
+                mostrarAlerta(Alert.AlertType.WARNING,
+                        "Fecha inválida",
+                        "No se pueden seleccionar fechas pasadas.");
+            }
+            return;
+        }
+
+        if (esFestivo(fechaSeleccionada)) {
+            actualizarEstadoDisponibilidad(
+                    "La fecha " + fechaSeleccionada.format(FORMATO_FECHA) +
+                            " es festivo en Colombia. Seleccione otra fecha.");
+
+            if (mostrarMensajes) {
+                mostrarAlerta(Alert.AlertType.WARNING,
+                        "Fecha no disponible",
+                        "No se pueden agendar citas en días festivos.");
+            }
             return;
         }
 
@@ -424,10 +691,15 @@ public class PacientePanelController {
                     disponibilidad.getFranjasDisponibles() == null ||
                     disponibilidad.getFranjasDisponibles().isEmpty()) {
 
-                mostrarAlerta(Alert.AlertType.INFORMATION,
-                        "Sin disponibilidad",
-                        "El médico/terapista seleccionado no tiene franjas disponibles para la fecha "
-                                + fechaSeleccionada + ".");
+                actualizarEstadoDisponibilidad(
+                        "Sin disponibilidad para " + fechaSeleccionada.format(FORMATO_FECHA) + ".");
+
+                if (mostrarMensajes) {
+                    mostrarAlerta(Alert.AlertType.INFORMATION,
+                            "Sin disponibilidad",
+                            "El médico/terapista seleccionado no tiene franjas disponibles para la fecha "
+                                    + fechaSeleccionada.format(FORMATO_FECHA) + ".");
+                }
                 return;
             }
 
@@ -445,22 +717,33 @@ public class PacientePanelController {
                 cmbHoraDisponible.getSelectionModel().selectFirst();
             }
 
-            mostrarAlerta(Alert.AlertType.INFORMATION,
-                    "Disponibilidad encontrada",
-                    "Se cargaron las franjas disponibles para la fecha seleccionada.");
+            actualizarEstadoDisponibilidad(
+                    "Disponibilidad cargada automáticamente: "
+                            + cmbHoraDisponible.getItems().size()
+                            + " franja(s) disponible(s).");
+
+            if (mostrarMensajes) {
+                mostrarAlerta(Alert.AlertType.INFORMATION,
+                        "Disponibilidad encontrada",
+                        "Se cargaron las franjas disponibles para la fecha seleccionada.");
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
 
-            mostrarAlerta(Alert.AlertType.ERROR,
-                    "Error consultando disponibilidad",
-                    "No se pudo consultar la disponibilidad.\n\nDetalle: " + e.getMessage());
+            actualizarEstadoDisponibilidad("No se pudo consultar disponibilidad. Revise la fecha seleccionada.");
+
+            if (mostrarMensajes) {
+                mostrarAlerta(Alert.AlertType.ERROR,
+                        "Error consultando disponibilidad",
+                        "No se pudo consultar la disponibilidad.\n\nDetalle: " + e.getMessage());
+            }
         }
     }
 
     @FXML
     private void agendarCita() {
-        if (!validarPerfilAntesDeAgendar()) {
+        if (!validarPerfilAntesDeAgendar(true)) {
             return;
         }
 
@@ -497,11 +780,12 @@ public class PacientePanelController {
                     "La cita fue agendada correctamente.\n\n" +
                             "Paciente: " + txtNombres.getText().trim() + " " + txtApellidos.getText().trim() + "\n" +
                             "Médico/Terapista: " + medicoSeleccionado.getNombreCompleto() + "\n" +
-                            "Fecha: " + request.getFecha() + "\n" +
+                            "Fecha: " + request.getFecha().format(FORMATO_FECHA) + "\n" +
                             "Hora: " + request.getHora());
 
             limpiarFormularioDespuesDeAgendar();
             consultarMisCitasSilencioso();
+            cargarDisponibilidadAutomatica();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -576,18 +860,22 @@ public class PacientePanelController {
         }
     }
 
-    private boolean validarPerfilAntesDeAgendar() {
+    private boolean validarPerfilAntesDeAgendar(boolean mostrarMensaje) {
         if (modoEdicionPerfil) {
-            mostrarAlerta(Alert.AlertType.WARNING,
-                    "Perfil en edición",
-                    "Debe guardar su perfil antes de continuar.");
+            if (mostrarMensaje) {
+                mostrarAlerta(Alert.AlertType.WARNING,
+                        "Perfil en edición",
+                        "Debe guardar su perfil antes de continuar.");
+            }
             return false;
         }
 
         if (!perfilExiste || campoVacio(txtNumeroDocumento)) {
-            mostrarAlerta(Alert.AlertType.WARNING,
-                    "Perfil incompleto",
-                    "Debe completar y guardar sus datos personales antes de agendar o consultar disponibilidad.");
+            if (mostrarMensaje) {
+                mostrarAlerta(Alert.AlertType.WARNING,
+                        "Perfil incompleto",
+                        "Debe completar y guardar sus datos personales antes de agendar o consultar disponibilidad.");
+            }
             return false;
         }
 
@@ -605,14 +893,30 @@ public class PacientePanelController {
     }
 
     private boolean formularioValido() {
+        LocalDate fechaSeleccionada = obtenerFechaCitaSeleccionada();
+
         if (cmbMedico.getValue() == null ||
-                obtenerFechaCitaSeleccionada() == null ||
+                fechaSeleccionada == null ||
                 cmbHoraDisponible.getValue() == null ||
                 cmbHoraDisponible.getValue().trim().isEmpty()) {
 
             mostrarAlerta(Alert.AlertType.WARNING,
                     "Formulario incompleto",
                     "Debe seleccionar médico/terapista, fecha y hora disponible.");
+            return false;
+        }
+
+        if (fechaSeleccionada.isBefore(LocalDate.now())) {
+            mostrarAlerta(Alert.AlertType.WARNING,
+                    "Fecha inválida",
+                    "No se pueden agendar citas en fechas pasadas.");
+            return false;
+        }
+
+        if (esFestivo(fechaSeleccionada)) {
+            mostrarAlerta(Alert.AlertType.WARNING,
+                    "Fecha no disponible",
+                    "No se pueden agendar citas en días festivos.");
             return false;
         }
 
@@ -624,25 +928,56 @@ public class PacientePanelController {
             return dpFechaCita.getValue();
         }
 
-        if (dpFechaCita.getEditor() == null) {
-            return null;
-        }
+        if (txtFechaCitaVisible != null &&
+                txtFechaCitaVisible.getText() != null &&
+                !txtFechaCitaVisible.getText().trim().isEmpty()) {
 
-        String textoFecha = dpFechaCita.getEditor().getText();
-
-        if (textoFecha == null || textoFecha.trim().isEmpty()) {
-            return null;
-        }
-
-        try {
-            return LocalDate.parse(textoFecha.trim(), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-        } catch (Exception e) {
             try {
-                return LocalDate.parse(textoFecha.trim(), DateTimeFormatter.ofPattern("d/M/yyyy"));
+                return LocalDate.parse(txtFechaCitaVisible.getText().trim(), FORMATO_FECHA);
             } catch (Exception ignored) {
                 return null;
             }
         }
+
+        return null;
+    }
+
+    private boolean esFestivo(LocalDate fecha) {
+        return fecha != null && FESTIVOS_COLOMBIA_2026.contains(fecha);
+    }
+
+    private void actualizarFechaSeleccionada() {
+        if (dpFechaCita == null) {
+            return;
+        }
+
+        LocalDate fecha = dpFechaCita.getValue();
+
+        if (fecha == null) {
+            Platform.runLater(() -> {
+                if (txtFechaCitaVisible != null) {
+                    txtFechaCitaVisible.setText("");
+                }
+
+                if (dpFechaCita.getEditor() != null) {
+                    dpFechaCita.getEditor().setText("");
+                }
+            });
+
+            return;
+        }
+
+        String fechaFormateada = fecha.format(FORMATO_FECHA);
+
+        Platform.runLater(() -> {
+            if (txtFechaCitaVisible != null) {
+                txtFechaCitaVisible.setText(fechaFormateada);
+            }
+
+            if (dpFechaCita.getEditor() != null) {
+                dpFechaCita.getEditor().setText("");
+            }
+        });
     }
 
     private boolean campoVacio(TextField campo) {
@@ -669,6 +1004,12 @@ public class PacientePanelController {
         cmbHoraDisponible.getItems().clear();
         cmbHoraDisponible.setValue(null);
         txtObservacion.clear();
+    }
+
+    private void actualizarEstadoDisponibilidad(String mensaje) {
+        if (lblEstadoDisponibilidad != null) {
+            lblEstadoDisponibilidad.setText(mensaje);
+        }
     }
 
     @FXML

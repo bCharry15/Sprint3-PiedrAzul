@@ -215,13 +215,22 @@
                                 </VBox>
 
                                 <VBox spacing="6.0">
-                                    <children>
-                                        <Label text=" " styleClass="field-label"/>
-                                        <Button text="Buscar citas"
-                                                onAction="#buscarCitas"
-                                                styleClass="content-button"/>
-                                    </children>
-                                </VBox>
+    <children>
+        <Label text=" " styleClass="field-label"/>
+        <Button text="Buscar citas"
+                onAction="#buscarCitas"
+                styleClass="content-button"/>
+    </children>
+</VBox>
+
+<VBox spacing="6.0">
+    <children>
+        <Label text=" " styleClass="field-label"/>
+        <Button text="Exportar CSV"
+                onAction="#exportarCsvAgendador"
+                styleClass="secondary-button"/>
+    </children>
+</VBox>
                             </children>
                         </HBox>
 
