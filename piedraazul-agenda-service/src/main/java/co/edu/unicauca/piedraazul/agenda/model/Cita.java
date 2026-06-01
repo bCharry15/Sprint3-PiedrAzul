@@ -31,7 +31,8 @@ public class Cita {
     @Column(nullable = false, length = 20)
     private EstadoCita estado;
 
-    @Column(length = 255)
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String observacion;
 
     public Cita() {
@@ -89,4 +90,3 @@ public class Cita {
         this.observacion = observacion;
     }
 }
-
