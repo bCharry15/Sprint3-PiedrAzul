@@ -41,8 +41,11 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // Administración
-                        .requestMatchers(HttpMethod.GET, "/api/medicos/**")
-                        .hasAnyRole("ADMIN", "AGENDADOR", "PACIENTE", "MEDICO")
+.requestMatchers(HttpMethod.GET, "/api/auth/users/role/**")
+.hasRole("ADMIN")
+
+.requestMatchers(HttpMethod.GET, "/api/medicos/**")
+.hasAnyRole("ADMIN", "AGENDADOR", "PACIENTE", "MEDICO")
 
                         .requestMatchers("/api/medicos/**")
                         .hasRole("ADMIN")

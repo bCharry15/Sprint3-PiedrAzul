@@ -1,13 +1,18 @@
 package co.edu.unicauca.piedraazul.agenda.infrastructure.adapter.in.web;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unicauca.piedraazul.agenda.domain.port.in.GestionarUsuariosUseCase;
+import co.edu.unicauca.piedraazul.agenda.model.User;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -50,5 +55,24 @@ public class AuthRestController {
                 body.get("numeroDocumento"),
                 body.get("nuevaPassword")
         );
+    }
+
+    @GetMapping("/users/role/{role}")
+    public List<Map<String, Object>> listarUsuariosPorRol(@PathVariable String role) {
+        return gestionarUsuariosUseCase.listarPorRol(role)
+                .stream()
+                .map(this::convertirUsuarioAResponse)
+                .toList();
+    }
+
+    private Map<String, Object> convertirUsuarioAResponse(User user) {
+        Map<String, Object> response = new HashMap<>();
+
+        response.put("id", user.getId());
+        response.put("username", user.getUsername());
+        response.put("role", user.getRole() != null ? user.getRole().name() : null);
+        response.put("status", user.getStatus() != null ? user.getStatus().name() : null);
+
+        return response;
     }
 }

@@ -171,6 +171,10 @@
                                     <children>
                                         <Label text="Configurar disponibilidad del médico/terapista" styleClass="form-title"/>
 
+                                        <Label text="Seleccione un médico para listar sus configuraciones. Para editar, seleccione una fila de la tabla, ajuste los campos y presione Actualizar disponibilidad."
+                                               wrapText="true"
+                                               styleClass="top-subtitle"/>
+
                                         <GridPane hgap="16.0" vgap="12.0">
                                             <columnConstraints>
                                                 <ColumnConstraints percentWidth="33.0"/>
@@ -236,8 +240,51 @@
                                                 <Button text="Guardar disponibilidad"
                                                         onAction="#guardarDisponibilidadMedico"
                                                         styleClass="content-button"/>
+
+                                                <Button text="Actualizar disponibilidad"
+                                                        onAction="#actualizarDisponibilidadMedico"
+                                                        styleClass="content-button"/>
+
+                                                <Button text="Limpiar disponibilidad"
+                                                        onAction="#limpiarFormularioDisponibilidad"
+                                                        styleClass="secondary-button"/>
                                             </children>
                                         </HBox>
+
+                                        <Label text="Configuraciones registradas"
+                                               styleClass="form-title"/>
+
+                                        <TableView fx:id="disponibilidadesTable" prefHeight="220.0">
+                                            <columns>
+                                                <TableColumn fx:id="disponibilidadIdColumn"
+                                                             text="ID"
+                                                             prefWidth="70.0"/>
+
+                                                <TableColumn fx:id="disponibilidadDiaColumn"
+                                                             text="Día"
+                                                             prefWidth="150.0"/>
+
+                                                <TableColumn fx:id="disponibilidadHoraInicioColumn"
+                                                             text="Inicio"
+                                                             prefWidth="110.0"/>
+
+                                                <TableColumn fx:id="disponibilidadHoraFinColumn"
+                                                             text="Fin"
+                                                             prefWidth="110.0"/>
+
+                                                <TableColumn fx:id="disponibilidadIntervaloColumn"
+                                                             text="Intervalo"
+                                                             prefWidth="120.0"/>
+
+                                                <TableColumn fx:id="disponibilidadVentanaColumn"
+                                                             text="Ventana"
+                                                             prefWidth="120.0"/>
+
+                                                <TableColumn fx:id="disponibilidadActivoColumn"
+                                                             text="Estado"
+                                                             prefWidth="120.0"/>
+                                            </columns>
+                                        </TableView>
                                     </children>
                                 </VBox>
 

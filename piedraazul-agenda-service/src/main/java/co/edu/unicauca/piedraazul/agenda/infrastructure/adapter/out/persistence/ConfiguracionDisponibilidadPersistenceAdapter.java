@@ -1,6 +1,7 @@
 package co.edu.unicauca.piedraazul.agenda.infrastructure.adapter.out.persistence;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
@@ -21,6 +22,11 @@ public class ConfiguracionDisponibilidadPersistenceAdapter implements Configurar
     @Override
     public DisponibilidadMedico guardar(DisponibilidadMedico disponibilidad) {
         return disponibilidadMedicoRepository.save(disponibilidad);
+    }
+
+    @Override
+    public Optional<DisponibilidadMedico> buscarPorId(Long disponibilidadId) {
+        return disponibilidadMedicoRepository.findById(disponibilidadId);
     }
 
     @Override

@@ -6,11 +6,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import co.edu.unicauca.piedraazul.agenda.application.service.SincronizarUsuariosKeycloakService;
 import co.edu.unicauca.piedraazul.agenda.domain.port.in.GestionarMedicosUseCase;
 import co.edu.unicauca.piedraazul.agenda.domain.port.out.CodificarPasswordPort;
 import co.edu.unicauca.piedraazul.agenda.domain.port.out.GestionarMedicosPort;
 import co.edu.unicauca.piedraazul.agenda.domain.port.out.GestionarUsuariosPort;
-import co.edu.unicauca.piedraazul.agenda.domain.port.out.RegistrarUsuarioKeycloakPort;
 import co.edu.unicauca.piedraazul.agenda.model.Medico;
 import co.edu.unicauca.piedraazul.agenda.model.User;
 import co.edu.unicauca.piedraazul.agenda.model.dto.MedicoRequest;
@@ -28,7 +28,7 @@ public class GestionarMedicosService implements GestionarMedicosUseCase {
     private final GestionarMedicosPort gestionarMedicosPort;
     private final GestionarUsuariosPort gestionarUsuariosPort;
     private final CodificarPasswordPort codificarPasswordPort;
-    private final RegistrarUsuarioKeycloakPort registrarUsuarioKeycloakPort;
+    private final SincronizarUsuariosKeycloakService sincronizarUsuariosKeycloakService;
     private final MedicoRepository medicoRepository;
     private final CitaRepository citaRepository;
     private final DisponibilidadMedicoRepository disponibilidadMedicoRepository;
@@ -37,7 +37,7 @@ public class GestionarMedicosService implements GestionarMedicosUseCase {
     public GestionarMedicosService(GestionarMedicosPort gestionarMedicosPort,
                                    GestionarUsuariosPort gestionarUsuariosPort,
                                    CodificarPasswordPort codificarPasswordPort,
-                                   RegistrarUsuarioKeycloakPort registrarUsuarioKeycloakPort,
+                                   SincronizarUsuariosKeycloakService sincronizarUsuariosKeycloakService,
                                    MedicoRepository medicoRepository,
                                    CitaRepository citaRepository,
                                    DisponibilidadMedicoRepository disponibilidadMedicoRepository,
@@ -45,7 +45,7 @@ public class GestionarMedicosService implements GestionarMedicosUseCase {
         this.gestionarMedicosPort = gestionarMedicosPort;
         this.gestionarUsuariosPort = gestionarUsuariosPort;
         this.codificarPasswordPort = codificarPasswordPort;
-        this.registrarUsuarioKeycloakPort = registrarUsuarioKeycloakPort;
+        this.sincronizarUsuariosKeycloakService = sincronizarUsuariosKeycloakService;
         this.medicoRepository = medicoRepository;
         this.citaRepository = citaRepository;
         this.disponibilidadMedicoRepository = disponibilidadMedicoRepository;
@@ -73,10 +73,10 @@ public class GestionarMedicosService implements GestionarMedicosUseCase {
             );
         }
 
-        registrarUsuarioKeycloakPort.registrarUsuario(
+        sincronizarUsuariosKeycloakService.sincronizarUsuarioObligatorio(
                 username,
                 password,
-                UserRole.MEDICO.name()
+                UserRole.MEDICO
         );
 
         User user = new User();
@@ -181,6 +181,13 @@ public class GestionarMedicosService implements GestionarMedicosUseCase {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "La password del médico es obligatoria."
+            );
+        }
+
+        if (request.getPassword().trim().length() < 6) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La password del médico debe tener mínimo 6 caracteres."
             );
         }
     }
