@@ -741,4 +741,30 @@ public class AgendaServiceClient {
             return null;
         }
     }
+
+    public void reagendarCita(Long citaId,
+                          LocalDate fechaNueva,
+                          LocalTime horaNueva,
+                          String responsable,
+                          String motivo) {
+    String url = agendaServiceUrl + "/api/citas/" + citaId + "/reagendar";
+
+    Map<String, Object> body = new HashMap<>();
+    body.put("fechaNueva", fechaNueva != null ? fechaNueva.toString() : null);
+    body.put("horaNueva", horaNueva != null ? horaNueva.toString() : null);
+    body.put("responsable", responsable);
+    body.put("motivo", motivo);
+
+    try {
+        restTemplate.exchange(
+                url,
+                HttpMethod.PUT,
+                crearEntidadAutenticada(body),
+                Map.class
+        );
+
+    } catch (RestClientResponseException ex) {
+        throw new RuntimeException(extraerMensajeError(ex));
+    }
+}
 }
