@@ -28,6 +28,7 @@ import co.edu.unicauca.piedraazul.model.dto.CrearDisponibilidadRequest;
 import co.edu.unicauca.piedraazul.model.dto.CrearMedicoRequest;
 import co.edu.unicauca.piedraazul.model.dto.DisponibilidadResponse;
 import co.edu.unicauca.piedraazul.model.dto.DisponibilidadTablaModel;
+import co.edu.unicauca.piedraazul.model.dto.HistorialReagendamientoTablaModel;
 import co.edu.unicauca.piedraazul.model.dto.MedicoResponse;
 import co.edu.unicauca.piedraazul.model.enums.Genero;
 
@@ -373,6 +374,50 @@ public class AgendaServiceClient {
         }
     }
 
+    public void reagendarCita(Long citaId,
+                              LocalDate fechaNueva,
+                              LocalTime horaNueva,
+                              String responsable,
+                              String motivo) {
+        String url = agendaServiceUrl + "/api/citas/" + citaId + "/reagendar";
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("fechaNueva", fechaNueva != null ? fechaNueva.toString() : null);
+        body.put("horaNueva", horaNueva != null ? horaNueva.toString() : null);
+        body.put("responsable", responsable);
+        body.put("motivo", motivo);
+
+        try {
+            restTemplate.exchange(
+                    url,
+                    HttpMethod.PUT,
+                    crearEntidadAutenticada(body),
+                    Map.class
+            );
+
+        } catch (RestClientResponseException ex) {
+            throw new RuntimeException(extraerMensajeError(ex));
+        }
+    }
+
+    public HistorialReagendamientoTablaModel[] listarHistorialReagendamientos(Long citaId) {
+        String url = agendaServiceUrl + "/api/citas/" + citaId + "/historial-reagendamientos";
+
+        try {
+            ResponseEntity<HistorialReagendamientoTablaModel[]> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    crearEntidadAutenticada(),
+                    HistorialReagendamientoTablaModel[].class
+            );
+
+            return response.getBody();
+
+        } catch (RestClientResponseException ex) {
+            throw new RuntimeException(extraerMensajeError(ex));
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public Map<String, String> login(String username, String password) {
         String url = agendaServiceUrl + "/api/auth/login";
@@ -506,6 +551,25 @@ public class AgendaServiceClient {
     @SuppressWarnings("unchecked")
     public Paciente buscarPerfilPacientePorUsername(String username) {
         String url = agendaServiceUrl + "/api/pacientes/perfil/" + username;
+
+        try {
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    crearEntidadAutenticada(),
+                    Map.class
+            );
+
+            return convertirMapaAPaciente(response.getBody());
+
+        } catch (RestClientResponseException ex) {
+            throw new RuntimeException(extraerMensajeError(ex));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public Paciente buscarPacientePorNumeroDocumento(String numeroDocumento) {
+        String url = agendaServiceUrl + "/api/pacientes/documento/" + numeroDocumento.trim();
 
         try {
             ResponseEntity<Map> response = restTemplate.exchange(
@@ -741,30 +805,4 @@ public class AgendaServiceClient {
             return null;
         }
     }
-
-    public void reagendarCita(Long citaId,
-                          LocalDate fechaNueva,
-                          LocalTime horaNueva,
-                          String responsable,
-                          String motivo) {
-    String url = agendaServiceUrl + "/api/citas/" + citaId + "/reagendar";
-
-    Map<String, Object> body = new HashMap<>();
-    body.put("fechaNueva", fechaNueva != null ? fechaNueva.toString() : null);
-    body.put("horaNueva", horaNueva != null ? horaNueva.toString() : null);
-    body.put("responsable", responsable);
-    body.put("motivo", motivo);
-
-    try {
-        restTemplate.exchange(
-                url,
-                HttpMethod.PUT,
-                crearEntidadAutenticada(body),
-                Map.class
-        );
-
-    } catch (RestClientResponseException ex) {
-        throw new RuntimeException(extraerMensajeError(ex));
-    }
-}
 }

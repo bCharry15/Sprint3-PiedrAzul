@@ -5,6 +5,7 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextArea?>
@@ -13,6 +14,7 @@
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane prefHeight="760.0" prefWidth="1280.0"
@@ -47,7 +49,7 @@
                     </children>
                 </VBox>
 
-                <VBox VBox.vgrow="ALWAYS"/>
+                <Region VBox.vgrow="ALWAYS"/>
 
                 <Button text="Cerrar sesión"
                         onAction="#logout"
@@ -62,194 +64,332 @@
     </left>
 
     <center>
-        <VBox spacing="20.0" styleClass="content-area">
-            <children>
-                <VBox spacing="6.0">
+        <ScrollPane fitToWidth="true"
+                    pannable="true"
+                    hbarPolicy="NEVER"
+                    vbarPolicy="AS_NEEDED"
+                    styleClass="dashboard-scroll">
+            <content>
+                <VBox spacing="20.0" styleClass="content-area">
                     <children>
-                        <Label fx:id="tituloSeccionLabel"
-                               text="Gestión de citas"
-                               styleClass="top-title"/>
-
-                        <Label fx:id="subtituloSeccionLabel"
-                               text="Aquí el agendador puede registrar una nueva cita y consultar las citas de un médico por fecha."
-                               styleClass="top-subtitle"/>
-                    </children>
-                </VBox>
-
-                <VBox fx:id="crearCitaSection"
-                      spacing="14.0"
-                      styleClass="form-card">
-                    <children>
-                        <Label text="Crear nueva cita" styleClass="form-title"/>
-
-                        <GridPane hgap="16.0" vgap="12.0">
-                            <columnConstraints>
-                                <ColumnConstraints percentWidth="33.33"/>
-                                <ColumnConstraints percentWidth="33.33"/>
-                                <ColumnConstraints percentWidth="33.33"/>
-                            </columnConstraints>
-
+                        <VBox spacing="6.0">
                             <children>
-                                <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                <Label fx:id="tituloSeccionLabel"
+                                       text="Crear cita médica"
+                                       styleClass="top-title"/>
+
+                                <Label fx:id="subtituloSeccionLabel"
+                                       text="Registra los datos del paciente, selecciona el médico y usa horarios reales de disponibilidad."
+                                       styleClass="top-subtitle"/>
+                            </children>
+                        </VBox>
+
+                        <VBox fx:id="crearCitaSection" spacing="20.0">
+                            <children>
+                                <VBox spacing="14.0" styleClass="form-card">
                                     <children>
-                                        <Label text="Tipo de documento" styleClass="field-label"/>
-                                        <ComboBox fx:id="tipoDocumentoCombo" promptText="Seleccione"/>
+                                        <Label text="1. Datos del paciente" styleClass="form-title"/>
+
+                                        <Label text="Digite el documento. Si el paciente ya existe, el sistema completará sus datos automáticamente."
+                                               wrapText="true"
+                                               styleClass="top-subtitle"/>
+
+                                        <GridPane hgap="16.0" vgap="12.0">
+                                            <columnConstraints>
+                                                <ColumnConstraints percentWidth="33.33"/>
+                                                <ColumnConstraints percentWidth="33.33"/>
+                                                <ColumnConstraints percentWidth="33.33"/>
+                                            </columnConstraints>
+
+                                            <children>
+                                                <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                                    <children>
+                                                        <Label text="Tipo de documento" styleClass="field-label"/>
+                                                        <ComboBox fx:id="tipoDocumentoCombo"
+                                                                  promptText="Seleccione"
+                                                                  maxWidth="Infinity"/>
+                                                    </children>
+                                                </VBox>
+
+                                                <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                                    <children>
+                                                        <Label text="Número de documento" styleClass="field-label"/>
+
+                                                        <HBox spacing="8.0">
+                                                            <children>
+                                                                <TextField fx:id="numeroDocumentoField"
+                                                                           promptText="Ingrese documento"
+                                                                           HBox.hgrow="ALWAYS"/>
+
+                                                                <Button text="Buscar"
+                                                                        onAction="#autocompletarPacientePorDocumento"
+                                                                        styleClass="secondary-button"/>
+                                                            </children>
+                                                        </HBox>
+                                                    </children>
+                                                </VBox>
+
+                                                <VBox spacing="6.0" GridPane.columnIndex="2" GridPane.rowIndex="0">
+                                                    <children>
+                                                        <Label text="Celular" styleClass="field-label"/>
+                                                        <TextField fx:id="celularField"
+                                                                   promptText="Ingrese celular"/>
+                                                    </children>
+                                                </VBox>
+
+                                                <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                                                    <children>
+                                                        <Label text="Nombres" styleClass="field-label"/>
+                                                        <TextField fx:id="nombresField"
+                                                                   promptText="Ingrese nombres"/>
+                                                    </children>
+                                                </VBox>
+
+                                                <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                                    <children>
+                                                        <Label text="Apellidos" styleClass="field-label"/>
+                                                        <TextField fx:id="apellidosField"
+                                                                   promptText="Ingrese apellidos"/>
+                                                    </children>
+                                                </VBox>
+
+                                                <VBox spacing="6.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                                                    <children>
+                                                        <Label text="Género" styleClass="field-label"/>
+                                                        <ComboBox fx:id="generoCombo"
+                                                                  promptText="Seleccione"
+                                                                  maxWidth="Infinity"/>
+                                                    </children>
+                                                </VBox>
+
+                                                <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                                                    <children>
+                                                        <Label text="Fecha de nacimiento" styleClass="field-label"/>
+
+                                                        <HBox spacing="8.0">
+                                                            <children>
+                                                                <TextField fx:id="fechaNacimientoVisibleField"
+                                                                           editable="false"
+                                                                           promptText="Seleccione fecha"
+                                                                           HBox.hgrow="ALWAYS"/>
+
+                                                                <DatePicker fx:id="fechaNacimientoPicker"
+                                                                            prefWidth="46.0"
+                                                                            maxWidth="46.0"/>
+                                                            </children>
+                                                        </HBox>
+                                                    </children>
+                                                </VBox>
+
+                                                <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                                                    <children>
+                                                        <Label text="Correo electrónico" styleClass="field-label"/>
+                                                        <TextField fx:id="correoField"
+                                                                   promptText="Opcional"/>
+                                                    </children>
+                                                </VBox>
+                                            </children>
+                                        </GridPane>
+
+                                        <Label fx:id="estadoPacienteLabel"
+                                               text="Digite el documento para buscar o registrar un paciente."
+                                               wrapText="true"
+                                               styleClass="count-label"/>
                                     </children>
                                 </VBox>
 
-                                <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                <VBox spacing="14.0" styleClass="form-card">
                                     <children>
-                                        <Label text="Número de documento" styleClass="field-label"/>
-                                        <TextField fx:id="numeroDocumentoField" promptText="Ingrese documento"/>
-                                    </children>
-                                </VBox>
+                                        <Label text="2. Datos de la cita" styleClass="form-title"/>
 
-                                <VBox spacing="6.0" GridPane.columnIndex="2" GridPane.rowIndex="0">
-                                    <children>
-                                        <Label text="Celular" styleClass="field-label"/>
-                                        <TextField fx:id="celularField" promptText="Ingrese celular"/>
-                                    </children>
-                                </VBox>
+                                        <GridPane hgap="16.0" vgap="12.0">
+                                            <columnConstraints>
+                                                <ColumnConstraints percentWidth="33.33"/>
+                                                <ColumnConstraints percentWidth="33.33"/>
+                                                <ColumnConstraints percentWidth="33.33"/>
+                                            </columnConstraints>
 
-                                <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="1">
-                                    <children>
-                                        <Label text="Nombres" styleClass="field-label"/>
-                                        <TextField fx:id="nombresField" promptText="Ingrese nombres"/>
-                                    </children>
-                                </VBox>
+                                            <children>
+                                                <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                                    <children>
+                                                        <Label text="Médico / Terapeuta" styleClass="field-label"/>
+                                                        <ComboBox fx:id="medicoCombo"
+                                                                  promptText="Seleccione médico"
+                                                                  maxWidth="Infinity"/>
+                                                    </children>
+                                                </VBox>
 
-                                <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
-                                    <children>
-                                        <Label text="Apellidos" styleClass="field-label"/>
-                                        <TextField fx:id="apellidosField" promptText="Ingrese apellidos"/>
-                                    </children>
-                                </VBox>
+                                                <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                                    <children>
+                                                        <Label text="Fecha de la cita" styleClass="field-label"/>
 
-                                <VBox spacing="6.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
-                                    <children>
-                                        <Label text="Género" styleClass="field-label"/>
-                                        <ComboBox fx:id="generoCombo" promptText="Seleccione"/>
-                                    </children>
-                                </VBox>
+                                                        <HBox spacing="8.0">
+                                                            <children>
+                                                                <TextField fx:id="fechaCitaVisibleField"
+                                                                           editable="false"
+                                                                           promptText="Seleccione fecha"
+                                                                           HBox.hgrow="ALWAYS"/>
 
-                                <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="2">
-                                    <children>
-                                        <Label text="Fecha de nacimiento" styleClass="field-label"/>
-                                        <DatePicker fx:id="fechaNacimientoPicker"/>
-                                    </children>
-                                </VBox>
+                                                                <DatePicker fx:id="fechaCitaPicker"
+                                                                            prefWidth="46.0"
+                                                                            maxWidth="46.0"/>
+                                                            </children>
+                                                        </HBox>
+                                                    </children>
+                                                </VBox>
 
-                                <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
-                                    <children>
-                                        <Label text="Correo electrónico" styleClass="field-label"/>
-                                        <TextField fx:id="correoField" promptText="Opcional"/>
-                                    </children>
-                                </VBox>
+                                                <VBox spacing="6.0" GridPane.columnIndex="2" GridPane.rowIndex="0">
+                                                    <children>
+                                                        <Label text="Hora disponible" styleClass="field-label"/>
+                                                        <ComboBox fx:id="horaCombo"
+                                                                  promptText="Seleccione hora"
+                                                                  maxWidth="Infinity"/>
+                                                    </children>
+                                                </VBox>
 
-                                <VBox spacing="6.0" GridPane.columnIndex="2" GridPane.rowIndex="2">
-                                    <children>
-                                        <Label text="Médico / Terapeuta" styleClass="field-label"/>
-                                        <ComboBox fx:id="medicoCombo" promptText="Seleccione médico"/>
-                                    </children>
-                                </VBox>
+                                                <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="3">
+                                                    <children>
+                                                        <Label text="Observación" styleClass="field-label"/>
+                                                        <TextArea fx:id="observacionArea"
+                                                                  promptText="Opcional. Ej: paciente solicita confirmación por WhatsApp"
+                                                                  prefRowCount="3"/>
+                                                    </children>
+                                                </VBox>
+                                            </children>
+                                        </GridPane>
 
-                                <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="3">
-                                    <children>
-                                        <Label text="Fecha de la cita" styleClass="field-label"/>
-                                        <DatePicker fx:id="fechaCitaPicker"/>
-                                    </children>
-                                </VBox>
+                                        <Label fx:id="estadoDisponibilidadLabel"
+                                               text="Seleccione médico y fecha para cargar horarios."
+                                               wrapText="true"
+                                               styleClass="count-label"/>
 
-                                <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
-                                    <children>
-                                        <Label text="Hora de la cita" styleClass="field-label"/>
-                                        <ComboBox fx:id="horaCombo" promptText="Seleccione hora"/>
-                                    </children>
-                                </VBox>
+                                        <Label fx:id="resumenCitaLabel"
+                                               text="Resumen: pendiente por completar."
+                                               wrapText="true"
+                                               styleClass="top-subtitle"/>
 
-                                <VBox spacing="6.0" GridPane.columnIndex="2" GridPane.rowIndex="3">
-                                    <children>
-                                        <Label text="Observación" styleClass="field-label"/>
-                                        <TextArea fx:id="observacionArea" promptText="Opcional" prefRowCount="2"/>
+                                        <HBox spacing="12.0">
+                                            <children>
+                                                <Button text="Guardar cita"
+                                                        onAction="#guardarCita"
+                                                        styleClass="content-button"/>
+
+                                                <Button text="Limpiar formulario"
+                                                        onAction="#limpiarFormulario"
+                                                        styleClass="secondary-button"/>
+                                            </children>
+                                        </HBox>
                                     </children>
                                 </VBox>
                             </children>
-                        </GridPane>
+                        </VBox>
 
-                        <HBox spacing="12.0">
+                        <VBox fx:id="consultarCitasSection"
+                              spacing="20.0"
+                              visible="false"
+                              managed="false">
                             <children>
-                                <Button text="Guardar cita"
-                                        onAction="#guardarCita"
-                                        styleClass="content-button"/>
-
-                                <Button text="Limpiar formulario"
-                                        onAction="#limpiarFormulario"
-                                        styleClass="secondary-button"/>
-                            </children>
-                        </HBox>
-                    </children>
-                </VBox>
-
-                <VBox fx:id="consultarCitasSection"
-                      spacing="14.0"
-                      styleClass="form-card"
-                      visible="false"
-                      managed="false">
-                    <children>
-                        <Label text="Consultar citas por médico y fecha" styleClass="form-title"/>
-
-                        <HBox spacing="16.0">
-                            <children>
-                                <VBox spacing="6.0">
+                                <VBox spacing="14.0" styleClass="form-card">
                                     <children>
-                                        <Label text="Médico / Terapeuta" styleClass="field-label"/>
-                                        <ComboBox fx:id="medicoBusquedaCombo" promptText="Seleccione médico" prefWidth="300.0"/>
+                                        <Label text="Consultar citas por médico y fecha" styleClass="form-title"/>
+
+                                        <Label text="Seleccione un médico y una fecha para consultar, exportar o revisar el historial de reagendamientos."
+                                               wrapText="true"
+                                               styleClass="top-subtitle"/>
+
+                                        <HBox spacing="16.0">
+                                            <children>
+                                                <VBox spacing="6.0">
+                                                    <children>
+                                                        <Label text="Médico / Terapeuta" styleClass="field-label"/>
+                                                        <ComboBox fx:id="medicoBusquedaCombo"
+                                                                  promptText="Seleccione médico"
+                                                                  prefWidth="320.0"/>
+                                                    </children>
+                                                </VBox>
+
+                                                <VBox spacing="6.0">
+                                                    <children>
+                                                        <Label text="Fecha" styleClass="field-label"/>
+                                                        <DatePicker fx:id="fechaBusquedaPicker"/>
+                                                    </children>
+                                                </VBox>
+
+                                                <VBox spacing="6.0">
+                                                    <children>
+                                                        <Label text=" " styleClass="field-label"/>
+                                                        <Button text="Buscar citas"
+                                                                onAction="#buscarCitas"
+                                                                styleClass="content-button"/>
+                                                    </children>
+                                                </VBox>
+
+                                                <VBox spacing="6.0">
+                                                    <children>
+                                                        <Label text=" " styleClass="field-label"/>
+                                                        <Button text="Exportar CSV"
+                                                                onAction="#exportarCsvAgendador"
+                                                                styleClass="secondary-button"/>
+                                                    </children>
+                                                </VBox>
+
+                                                <VBox spacing="6.0">
+                                                    <children>
+                                                        <Label text=" " styleClass="field-label"/>
+                                                        <Button text="Ver historial"
+                                                                onAction="#verHistorialReagendamiento"
+                                                                styleClass="secondary-button"/>
+                                                    </children>
+                                                </VBox>
+                                            </children>
+                                        </HBox>
+
+                                        <Label fx:id="cantidadCitasLabel"
+                                               text="Cantidad de citas: 0"
+                                               styleClass="count-label"/>
+
+                                        <TableView fx:id="citasTable" prefHeight="340.0">
+                                            <columns>
+                                                <TableColumn fx:id="idColumn"
+                                                             text="ID"
+                                                             prefWidth="70.0"/>
+
+                                                <TableColumn fx:id="pacienteColumn"
+                                                             text="Paciente"
+                                                             prefWidth="220.0"/>
+
+                                                <TableColumn fx:id="documentoColumn"
+                                                             text="Documento"
+                                                             prefWidth="140.0"/>
+
+                                                <TableColumn fx:id="medicoColumn"
+                                                             text="Médico"
+                                                             prefWidth="220.0"/>
+
+                                                <TableColumn fx:id="fechaColumn"
+                                                             text="Fecha"
+                                                             prefWidth="120.0"/>
+
+                                                <TableColumn fx:id="horaColumn"
+                                                             text="Hora"
+                                                             prefWidth="100.0"/>
+
+                                                <TableColumn fx:id="estadoColumn"
+                                                             text="Estado"
+                                                             prefWidth="140.0"/>
+                                            </columns>
+                                        </TableView>
                                     </children>
                                 </VBox>
-
-                                <VBox spacing="6.0">
-                                    <children>
-                                        <Label text="Fecha" styleClass="field-label"/>
-                                        <DatePicker fx:id="fechaBusquedaPicker"/>
-                                    </children>
-                                </VBox>
-
-                                <VBox spacing="6.0">
-    <children>
-        <Label text=" " styleClass="field-label"/>
-        <Button text="Buscar citas"
-                onAction="#buscarCitas"
-                styleClass="content-button"/>
-    </children>
-</VBox>
-
-<VBox spacing="6.0">
-    <children>
-        <Label text=" " styleClass="field-label"/>
-        <Button text="Exportar CSV"
-                onAction="#exportarCsvAgendador"
-                styleClass="secondary-button"/>
-    </children>
-</VBox>
                             </children>
-                        </HBox>
-
-                        <Label fx:id="cantidadCitasLabel" text="Cantidad de citas: 0" styleClass="count-label"/>
-
-                        <TableView fx:id="citasTable" prefHeight="260.0">
-                            <columns>
-                                <TableColumn fx:id="idColumn" text="ID" prefWidth="70.0"/>
-                                <TableColumn fx:id="pacienteColumn" text="Paciente" prefWidth="180.0"/>
-                                <TableColumn fx:id="documentoColumn" text="Documento" prefWidth="130.0"/>
-                                <TableColumn fx:id="medicoColumn" text="Médico" prefWidth="180.0"/>
-                                <TableColumn fx:id="fechaColumn" text="Fecha" prefWidth="110.0"/>
-                                <TableColumn fx:id="horaColumn" text="Hora" prefWidth="100.0"/>
-                                <TableColumn fx:id="estadoColumn" text="Estado" prefWidth="120.0"/>
-                            </columns>
-                        </TableView>
+                        </VBox>
                     </children>
+
+                    <padding>
+                        <Insets top="0.0" right="0.0" bottom="40.0" left="0.0"/>
+                    </padding>
                 </VBox>
-            </children>
-        </VBox>
+            </content>
+        </ScrollPane>
     </center>
 </BorderPane>

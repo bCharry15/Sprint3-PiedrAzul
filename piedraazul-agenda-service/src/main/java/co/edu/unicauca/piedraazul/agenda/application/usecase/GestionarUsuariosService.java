@@ -44,32 +44,41 @@ public class GestionarUsuariosService implements GestionarUsuariosUseCase {
     }
 
     @Override
-    public Map<String, Object> login(String username, String password) {
-        validarTexto(username, "El username es obligatorio.");
-        validarTexto(password, "La password es obligatoria.");
+public Map<String, Object> login(String username, String password) {
+    validarTexto(username, "El username es obligatorio.");
+    validarTexto(password, "La password es obligatoria.");
 
-        String usernameNormalizado = username.trim();
+    String usernameNormalizado = username.trim();
 
-        Map<String, Object> tokenKeycloak = autenticarUsuarioPort.obtenerToken(
-                usernameNormalizado,
-                password
+    User usuarioLocal = gestionarUsuariosPort.buscarPorUsername(usernameNormalizado)
+            .orElse(null);
+
+    if (usuarioLocal != null && usuarioLocal.getStatus() == UserStatus.INACTIVE) {
+        throw new ResponseStatusException(
+                HttpStatus.FORBIDDEN,
+                "El usuario se encuentra inactivo. Comuníquese con el administrador."
         );
-
-        Map<String, Object> respuesta = new HashMap<>(tokenKeycloak);
-        respuesta.put("username", usernameNormalizado);
-        respuesta.put("mensaje", "Autenticación exitosa con Keycloak.");
-
-        gestionarUsuariosPort.buscarPorUsername(usernameNormalizado)
-                .ifPresent(user -> {
-                    respuesta.put("role", user.getRole().name());
-                    respuesta.put("status", user.getStatus().name());
-                });
-
-        respuesta.putIfAbsent("role", "ADMIN");
-        respuesta.putIfAbsent("status", "ACTIVE");
-
-        return respuesta;
     }
+
+    Map<String, Object> tokenKeycloak = autenticarUsuarioPort.obtenerToken(
+            usernameNormalizado,
+            password
+    );
+
+    Map<String, Object> respuesta = new HashMap<>(tokenKeycloak);
+    respuesta.put("username", usernameNormalizado);
+    respuesta.put("mensaje", "Autenticación exitosa con Keycloak.");
+
+    if (usuarioLocal != null) {
+        respuesta.put("role", usuarioLocal.getRole().name());
+        respuesta.put("status", usuarioLocal.getStatus().name());
+    }
+
+    respuesta.putIfAbsent("role", "ADMIN");
+    respuesta.putIfAbsent("status", "ACTIVE");
+
+    return respuesta;
+}
 
     @Override
     public Map<String, String> registrar(String username, String password, String role) {

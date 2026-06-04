@@ -11,6 +11,7 @@ import co.edu.unicauca.piedraazul.agenda.domain.port.in.GestionarMedicosUseCase;
 import co.edu.unicauca.piedraazul.agenda.domain.port.out.CodificarPasswordPort;
 import co.edu.unicauca.piedraazul.agenda.domain.port.out.GestionarMedicosPort;
 import co.edu.unicauca.piedraazul.agenda.domain.port.out.GestionarUsuariosPort;
+import co.edu.unicauca.piedraazul.agenda.model.DisponibilidadMedico;
 import co.edu.unicauca.piedraazul.agenda.model.Medico;
 import co.edu.unicauca.piedraazul.agenda.model.User;
 import co.edu.unicauca.piedraazul.agenda.model.dto.MedicoRequest;
@@ -18,7 +19,6 @@ import co.edu.unicauca.piedraazul.agenda.model.enums.UserRole;
 import co.edu.unicauca.piedraazul.agenda.model.enums.UserStatus;
 import co.edu.unicauca.piedraazul.agenda.repository.CitaRepository;
 import co.edu.unicauca.piedraazul.agenda.repository.DisponibilidadMedicoRepository;
-import co.edu.unicauca.piedraazul.agenda.repository.HistorialReagendamientoRepository;
 import co.edu.unicauca.piedraazul.agenda.repository.MedicoRepository;
 import jakarta.transaction.Transactional;
 
@@ -32,7 +32,6 @@ public class GestionarMedicosService implements GestionarMedicosUseCase {
     private final MedicoRepository medicoRepository;
     private final CitaRepository citaRepository;
     private final DisponibilidadMedicoRepository disponibilidadMedicoRepository;
-    private final HistorialReagendamientoRepository historialReagendamientoRepository;
 
     public GestionarMedicosService(GestionarMedicosPort gestionarMedicosPort,
                                    GestionarUsuariosPort gestionarUsuariosPort,
@@ -40,8 +39,7 @@ public class GestionarMedicosService implements GestionarMedicosUseCase {
                                    SincronizarUsuariosKeycloakService sincronizarUsuariosKeycloakService,
                                    MedicoRepository medicoRepository,
                                    CitaRepository citaRepository,
-                                   DisponibilidadMedicoRepository disponibilidadMedicoRepository,
-                                   HistorialReagendamientoRepository historialReagendamientoRepository) {
+                                   DisponibilidadMedicoRepository disponibilidadMedicoRepository) {
         this.gestionarMedicosPort = gestionarMedicosPort;
         this.gestionarUsuariosPort = gestionarUsuariosPort;
         this.codificarPasswordPort = codificarPasswordPort;
@@ -49,7 +47,6 @@ public class GestionarMedicosService implements GestionarMedicosUseCase {
         this.medicoRepository = medicoRepository;
         this.citaRepository = citaRepository;
         this.disponibilidadMedicoRepository = disponibilidadMedicoRepository;
-        this.historialReagendamientoRepository = historialReagendamientoRepository;
     }
 
     @Override
@@ -95,6 +92,7 @@ public class GestionarMedicosService implements GestionarMedicosUseCase {
                         ? request.getIntervaloMinutos()
                         : 15
         );
+        medico.setActivo(true);
         medico.setUser(usuarioGuardado);
 
         return gestionarMedicosPort.guardar(medico);
@@ -112,7 +110,7 @@ public class GestionarMedicosService implements GestionarMedicosUseCase {
         return gestionarMedicosPort.buscarPorId(medicoId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "No existe un médico/terapista con id: " + medicoId
+                        "No existe un médico/terapista activo con id: " + medicoId
                 ));
     }
 
@@ -127,10 +125,10 @@ public class GestionarMedicosService implements GestionarMedicosUseCase {
 
         validarSolicitudActualizacion(request);
 
-        Medico medico = medicoRepository.findById(medicoId)
+        Medico medico = medicoRepository.findByIdAndActivoTrue(medicoId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "No existe un médico/terapista con id: " + medicoId
+                        "No existe un médico/terapista activo con id: " + medicoId
                 ));
 
         medico.setNombreCompleto(request.getNombreCompleto().trim());
@@ -150,21 +148,32 @@ public class GestionarMedicosService implements GestionarMedicosUseCase {
             );
         }
 
-        Medico medico = medicoRepository.findById(medicoId)
+        Medico medico = medicoRepository.findByIdAndActivoTrue(medicoId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "No existe un médico/terapista con id: " + medicoId
+                        "No existe un médico/terapista activo con id: " + medicoId
                 ));
 
-        long cantidadCitas = citaRepository.countByMedicoId(medicoId);
+        long cantidadCitasConservadas = citaRepository.countByMedicoId(medicoId);
 
-        historialReagendamientoRepository.deleteByMedicoId(medicoId);
-        citaRepository.deleteByMedicoId(medicoId);
-        disponibilidadMedicoRepository.deleteByMedicoId(medicoId);
-        medicoRepository.delete(medico);
+        medico.setActivo(false);
 
-        System.out.println("AGENDA-SERVICE -> Médico eliminado por administrador. ID: " + medicoId
-                + ". Citas eliminadas asociadas: " + cantidadCitas);
+        User usuarioMedico = medico.getUser();
+        if (usuarioMedico != null) {
+            usuarioMedico.setStatus(UserStatus.INACTIVE);
+            gestionarUsuariosPort.guardar(usuarioMedico);
+        }
+
+        List<DisponibilidadMedico> disponibilidades = disponibilidadMedicoRepository.findByMedicoId(medicoId);
+        for (DisponibilidadMedico disponibilidad : disponibilidades) {
+            disponibilidad.setActivo(false);
+        }
+
+        disponibilidadMedicoRepository.saveAll(disponibilidades);
+        medicoRepository.save(medico);
+
+        System.out.println("AGENDA-SERVICE -> Médico desactivado por administrador. ID: " + medicoId
+                + ". Citas conservadas asociadas: " + cantidadCitasConservadas);
     }
 
     private void validarSolicitudCreacion(MedicoRequest request) {

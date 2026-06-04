@@ -121,12 +121,7 @@ public class KeycloakUsuarioAdapter implements RegistrarUsuarioKeycloakPort {
 
         HttpHeaders headers = crearHeadersAdmin(adminToken);
 
-        Map<String, Object> body = Map.of(
-                "username", username,
-                "enabled", true,
-                "emailVerified", true,
-                "requiredActions", List.of()
-        );
+        Map<String, Object> body = crearBodyUsuarioCompleto(username);
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
@@ -185,12 +180,7 @@ public class KeycloakUsuarioAdapter implements RegistrarUsuarioKeycloakPort {
 
         HttpHeaders headers = crearHeadersAdmin(adminToken);
 
-        Map<String, Object> body = Map.of(
-                "username", username,
-                "enabled", true,
-                "emailVerified", true,
-                "requiredActions", List.of()
-        );
+        Map<String, Object> body = crearBodyUsuarioCompleto(username);
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
@@ -200,6 +190,36 @@ public class KeycloakUsuarioAdapter implements RegistrarUsuarioKeycloakPort {
                 request,
                 Void.class
         );
+    }
+
+    private Map<String, Object> crearBodyUsuarioCompleto(String username) {
+        String usernameLimpio = username.trim();
+
+        return Map.of(
+                "username", usernameLimpio,
+                "enabled", true,
+                "emailVerified", true,
+                "firstName", usernameLimpio,
+                "lastName", "PiedraAzul",
+                "email", crearEmailSeguro(usernameLimpio),
+                "requiredActions", List.of()
+        );
+    }
+
+    private String crearEmailSeguro(String username) {
+        String localPart = username
+                .toLowerCase()
+                .replaceAll("[^a-z0-9._-]", ".");
+
+        localPart = localPart
+                .replaceAll("\\.+", ".")
+                .replaceAll("^\\.|\\.$", "");
+
+        if (localPart.isBlank()) {
+            localPart = "usuario";
+        }
+
+        return localPart + "@piedraazul.local";
     }
 
     private void actualizarPasswordPorId(String userId,

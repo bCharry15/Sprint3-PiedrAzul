@@ -19,6 +19,6 @@ public class MedicoPersistenceAdapter implements BuscarMedicoPort {
 
     @Override
     public Optional<Medico> buscarPorId(Long medicoId) {
-        return medicoRepository.findById(medicoId);
+        return medicoRepository.findByIdAndActivoTrue(medicoId);
     }
 }

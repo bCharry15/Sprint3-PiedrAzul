@@ -1,7 +1,9 @@
 package co.edu.unicauca.piedraazul.agenda.infrastructure.adapter.out.persistence;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
@@ -20,6 +22,11 @@ public class BuscarCitasPersistenceAdapter implements BuscarCitasPort {
     }
 
     @Override
+    public Optional<Cita> buscarPorId(Long citaId) {
+        return citaRepository.findById(citaId);
+    }
+
+    @Override
     public List<Cita> buscarPorMedicoYFecha(Medico medico, LocalDate fecha) {
         return citaRepository.findByMedicoAndFechaOrderByHoraAsc(medico, fecha);
     }
@@ -27,5 +34,23 @@ public class BuscarCitasPersistenceAdapter implements BuscarCitasPort {
     @Override
     public List<Cita> buscarPorNumeroDocumentoPaciente(String numeroDocumento) {
         return citaRepository.findByPacienteNumeroDocumentoOrderByFechaAscHoraAsc(numeroDocumento);
+    }
+
+    @Override
+    public boolean existeHorarioOcupadoDiferenteDeCita(Medico medico,
+                                                        LocalDate fecha,
+                                                        LocalTime hora,
+                                                        Long citaId) {
+        return citaRepository.existsByMedicoAndFechaAndHoraAndIdNot(
+                medico,
+                fecha,
+                hora,
+                citaId
+        );
+    }
+
+    @Override
+    public Cita guardar(Cita cita) {
+        return citaRepository.save(cita);
     }
 }

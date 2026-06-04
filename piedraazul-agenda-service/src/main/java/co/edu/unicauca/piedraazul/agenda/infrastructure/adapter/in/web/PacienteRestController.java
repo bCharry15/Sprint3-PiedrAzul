@@ -40,6 +40,20 @@ public class PacienteRestController {
         return convertirPacienteAResponse(paciente);
     }
 
+    @GetMapping("/api/pacientes/documento/{numeroDocumento}")
+@ResponseStatus(HttpStatus.OK)
+public Map<String, Object> obtenerPacientePorDocumento(@PathVariable String numeroDocumento) {
+    validarTexto(numeroDocumento, "El número de documento es obligatorio.");
+
+    Paciente paciente = pacienteRepository.findByNumeroDocumento(numeroDocumento.trim())
+            .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe un paciente con ese número de documento."
+            ));
+
+    return convertirPacienteAResponse(paciente);
+}
+
     @PutMapping("/api/pacientes/perfil")
     @ResponseStatus(HttpStatus.OK)
     public Map<String, Object> guardarPerfil(@RequestBody Map<String, Object> body) {

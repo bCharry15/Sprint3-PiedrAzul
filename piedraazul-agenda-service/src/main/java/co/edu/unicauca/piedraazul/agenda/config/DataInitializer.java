@@ -241,27 +241,38 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void sincronizarUsuariosLocalesConKeycloak() {
-        List<User> usuarios = userRepository.findAll();
+    List<User> usuarios = userRepository.findAll();
 
-        for (User usuario : usuarios) {
-            if (usuario.getUsername() == null || usuario.getUsername().trim().isEmpty()) {
-                continue;
-            }
-
-            if (usuario.getRole() == null) {
-                continue;
-            }
-
-            String username = usuario.getUsername().trim();
-            String password = obtenerPasswordParaSincronizacion(username, usuario.getRole());
-
-            sincronizarUsuariosKeycloakService.sincronizarUsuarioEnArranque(
-                    username,
-                    password,
-                    usuario.getRole()
-            );
+    for (User usuario : usuarios) {
+        if (usuario.getUsername() == null || usuario.getUsername().trim().isEmpty()) {
+            continue;
         }
+
+        if (usuario.getRole() == null) {
+            continue;
+        }
+
+        String username = usuario.getUsername().trim();
+
+        /*
+         * Solo se sincronizan automáticamente los usuarios base del sistema.
+         * No se deben sincronizar usuarios creados desde la app porque la contraseña
+         * guardada localmente está cifrada o puede no coincidir con Keycloak.
+         */
+        if (!PASSWORDS_BASE.containsKey(username)) {
+            System.out.println("AGENDA-SERVICE -> Usuario omitido en sincronización automática con Keycloak: " + username);
+            continue;
+        }
+
+        String password = PASSWORDS_BASE.get(username);
+
+        sincronizarUsuariosKeycloakService.sincronizarUsuarioEnArranque(
+                username,
+                password,
+                usuario.getRole()
+        );
     }
+}
 
     private String obtenerPasswordParaSincronizacion(String username, UserRole role) {
         String usernameNormalizado = username.trim();
