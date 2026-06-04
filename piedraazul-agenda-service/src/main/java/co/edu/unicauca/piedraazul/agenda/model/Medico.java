@@ -1,6 +1,14 @@
 package co.edu.unicauca.piedraazul.agenda.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "medicos")
@@ -19,6 +27,9 @@ public class Medico {
     @Column(nullable = false)
     private Integer intervaloMinutos;
 
+    @Column(nullable = false)
+    private Boolean activo = true;
+
     @OneToOne
     @JoinColumn(name = "user_id", unique = true)
     private User user;
@@ -26,8 +37,23 @@ public class Medico {
     public Medico() {
     }
 
+    @PrePersist
+    public void prePersist() {
+        if (activo == null) {
+            activo = true;
+        }
+    }
+
     public Long getId() {
         return id;
+    }
+
+    /*
+     * Este setter ayuda cuando el objeto se construye desde DTOs o pruebas.
+     * En JPA normalmente el id lo asigna la base de datos.
+     */
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getNombreCompleto() {
@@ -54,6 +80,18 @@ public class Medico {
         this.intervaloMinutos = intervaloMinutos;
     }
 
+    public Boolean getActivo() {
+        return activo;
+    }
+
+    public void setActivo(Boolean activo) {
+        this.activo = activo;
+    }
+
+    public boolean estaActivo() {
+        return Boolean.TRUE.equals(activo);
+    }
+
     public User getUser() {
         return user;
     }
@@ -67,4 +105,3 @@ public class Medico {
         return nombreCompleto + " - " + especialidad;
     }
 }
-

@@ -14,6 +14,7 @@ import co.edu.unicauca.piedraazul.model.User;
 import co.edu.unicauca.piedraazul.model.dto.AgendadorTablaModel;
 import co.edu.unicauca.piedraazul.model.dto.CrearDisponibilidadRequest;
 import co.edu.unicauca.piedraazul.model.dto.CrearMedicoRequest;
+import co.edu.unicauca.piedraazul.model.dto.DisponibilidadTablaModel;
 import co.edu.unicauca.piedraazul.model.dto.MedicoResponse;
 import co.edu.unicauca.piedraazul.model.dto.MedicoTablaModel;
 import co.edu.unicauca.piedraazul.service.IAgendadorService;
@@ -59,6 +60,15 @@ public class AdminPanelController {
     @FXML private TextField intervaloDisponibilidadField;
     @FXML private TextField ventanaSemanasField;
 
+    @FXML private TableView<DisponibilidadTablaModel> disponibilidadesTable;
+    @FXML private TableColumn<DisponibilidadTablaModel, Long> disponibilidadIdColumn;
+    @FXML private TableColumn<DisponibilidadTablaModel, String> disponibilidadDiaColumn;
+    @FXML private TableColumn<DisponibilidadTablaModel, String> disponibilidadHoraInicioColumn;
+    @FXML private TableColumn<DisponibilidadTablaModel, String> disponibilidadHoraFinColumn;
+    @FXML private TableColumn<DisponibilidadTablaModel, Integer> disponibilidadIntervaloColumn;
+    @FXML private TableColumn<DisponibilidadTablaModel, Integer> disponibilidadVentanaColumn;
+    @FXML private TableColumn<DisponibilidadTablaModel, String> disponibilidadActivoColumn;
+
     @FXML private TextField agendadorUsernameField;
     @FXML private PasswordField agendadorPasswordField;
 
@@ -81,6 +91,8 @@ public class AdminPanelController {
     private final UserSession userSession;
 
     private MedicoTablaModel medicoSeleccionado;
+    private DisponibilidadTablaModel disponibilidadSeleccionada;
+    private boolean cargandoDisponibilidadDesdeTabla = false;
 
     public AdminPanelController(SceneManager sceneManager,
                                 AgendaServiceClient agendaServiceClient,
@@ -96,7 +108,9 @@ public class AdminPanelController {
     private void initialize() {
         configurarTablaMedicos();
         configurarTablaAgendadores();
+        configurarTablaDisponibilidades();
         configurarFormularioDisponibilidad();
+
         cargarMedicos();
         cargarAgendadores();
         mostrarGestionMedicos();
@@ -121,6 +135,26 @@ public class AdminPanelController {
         agendadorUsernameColumn.setCellValueFactory(new PropertyValueFactory<>("username"));
         agendadorStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
         agendadorRoleColumn.setCellValueFactory(new PropertyValueFactory<>("role"));
+    }
+
+    private void configurarTablaDisponibilidades() {
+        if (disponibilidadesTable == null) {
+            return;
+        }
+
+        disponibilidadIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+        disponibilidadDiaColumn.setCellValueFactory(new PropertyValueFactory<>("diaSemanaTexto"));
+        disponibilidadHoraInicioColumn.setCellValueFactory(new PropertyValueFactory<>("horaInicioTexto"));
+        disponibilidadHoraFinColumn.setCellValueFactory(new PropertyValueFactory<>("horaFinTexto"));
+        disponibilidadIntervaloColumn.setCellValueFactory(new PropertyValueFactory<>("intervaloMinutos"));
+        disponibilidadVentanaColumn.setCellValueFactory(new PropertyValueFactory<>("ventanaSemanas"));
+        disponibilidadActivoColumn.setCellValueFactory(new PropertyValueFactory<>("activoTexto"));
+
+        disponibilidadesTable.getSelectionModel().selectedItemProperty().addListener((obs, anterior, seleccionado) -> {
+            if (seleccionado != null) {
+                cargarDisponibilidadEnFormulario(seleccionado);
+            }
+        });
     }
 
     private void configurarFormularioDisponibilidad() {
@@ -174,6 +208,14 @@ public class AdminPanelController {
                     setText(empty || item == null
                             ? null
                             : item.getNombreCompleto() + " - " + item.getEspecialidad());
+                }
+            });
+
+            disponibilidadMedicoCombo.valueProperty().addListener((obs, anterior, seleccionado) -> {
+                if (!cargandoDisponibilidadDesdeTabla) {
+                    disponibilidadSeleccionada = null;
+                    limpiarCamposDisponibilidad(false);
+                    cargarDisponibilidadesMedicoSeleccionado();
                 }
             });
         }
@@ -331,7 +373,7 @@ public class AdminPanelController {
             confirmacion.setContentText(
                     "¿Está seguro de eliminar el médico?\n\n"
                             + medicoSeleccionado.getNombreCompleto()
-                            + "\n\nSi tiene citas asociadas, el sistema no permitirá eliminarlo."
+                            + "\n\nSi tiene citas asociadas, el sistema eliminará también sus registros relacionados."
             );
 
             Optional<ButtonType> resultado = confirmacion.showAndWait();
@@ -347,6 +389,7 @@ public class AdminPanelController {
                     "El médico fue eliminado correctamente.");
 
             limpiarFormularioMedico();
+            limpiarFormularioDisponibilidad();
             cargarMedicos();
 
         } catch (IllegalArgumentException e) {
@@ -418,71 +461,16 @@ public class AdminPanelController {
     @FXML
     private void guardarDisponibilidadMedico() {
         try {
-            MedicoTablaModel medico = disponibilidadMedicoCombo.getValue();
-            DayOfWeek dia = diaSemanaCombo.getValue();
-            String horaInicioTexto = getText(horaInicioField);
-            String horaFinTexto = getText(horaFinField);
-            String intervaloTexto = getText(intervaloDisponibilidadField);
-            String ventanaTexto = getText(ventanaSemanasField);
-
-            if (medico == null) {
-                throw new IllegalArgumentException("Debe seleccionar un médico.");
-            }
-
-            if (dia == null) {
-                throw new IllegalArgumentException("Debe seleccionar el día de la semana.");
-            }
-
-            if (horaInicioTexto.isEmpty()) {
-                throw new IllegalArgumentException("Debe ingresar la hora de inicio.");
-            }
-
-            if (horaFinTexto.isEmpty()) {
-                throw new IllegalArgumentException("Debe ingresar la hora de fin.");
-            }
-
-            if (intervaloTexto.isEmpty()) {
-                throw new IllegalArgumentException("Debe ingresar el intervalo.");
-            }
-
-            if (ventanaTexto.isEmpty()) {
-                throw new IllegalArgumentException("Debe ingresar la ventana de semanas.");
-            }
-
-            LocalTime horaInicio = LocalTime.parse(horaInicioTexto);
-            LocalTime horaFin = LocalTime.parse(horaFinTexto);
-
-            if (!horaFin.isAfter(horaInicio)) {
-                throw new IllegalArgumentException("La hora fin debe ser posterior a la hora inicio.");
-            }
-
-            int intervalo = Integer.parseInt(intervaloTexto);
-            int ventanaSemanas = Integer.parseInt(ventanaTexto);
-
-            if (intervalo <= 0) {
-                throw new IllegalArgumentException("El intervalo debe ser mayor que cero.");
-            }
-
-            if (ventanaSemanas <= 0) {
-                throw new IllegalArgumentException("La ventana de semanas debe ser mayor que cero.");
-            }
-
-            CrearDisponibilidadRequest request = new CrearDisponibilidadRequest(
-                    medico.getId(),
-                    dia,
-                    horaInicio,
-                    horaFin,
-                    intervalo,
-                    ventanaSemanas
-            );
+            CrearDisponibilidadRequest request = construirRequestDisponibilidad();
 
             agendaServiceClient.crearDisponibilidad(request);
 
             showAlert(Alert.AlertType.INFORMATION,
-                    "Éxito",
-                    "Disponibilidad configurada correctamente.");
+                    "Disponibilidad creada",
+                    "La disponibilidad fue configurada correctamente.");
 
-            limpiarFormularioDisponibilidad();
+            cargarDisponibilidadesMedicoSeleccionado();
+            limpiarCamposDisponibilidad(false);
 
         } catch (NumberFormatException e) {
             showAlert(Alert.AlertType.WARNING,
@@ -492,21 +480,72 @@ public class AdminPanelController {
         } catch (IllegalArgumentException e) {
             showAlert(Alert.AlertType.WARNING, "Validación", e.getMessage());
 
-        } catch (RestClientResponseException e) {
-            showAlert(Alert.AlertType.WARNING,
-                    "Respuesta de agenda-service",
-                    e.getResponseBodyAsString());
-
         } catch (Exception e) {
             showAlert(Alert.AlertType.ERROR,
                     "Error",
-                    "No se pudo configurar la disponibilidad del médico.");
+                    "No se pudo configurar la disponibilidad del médico.\n\nDetalle: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
+    @FXML
+    private void actualizarDisponibilidadMedico() {
+        try {
+            if (disponibilidadSeleccionada == null) {
+                throw new IllegalArgumentException("Debe seleccionar una configuración de la tabla para actualizar.");
+            }
+
+            CrearDisponibilidadRequest request = construirRequestDisponibilidad();
+
+            agendaServiceClient.actualizarDisponibilidad(disponibilidadSeleccionada.getId(), request);
+
+            showAlert(Alert.AlertType.INFORMATION,
+                    "Disponibilidad actualizada",
+                    "La configuración de disponibilidad fue actualizada correctamente.");
+
+            cargarDisponibilidadesMedicoSeleccionado();
+            limpiarCamposDisponibilidad(false);
+
+        } catch (NumberFormatException e) {
+            showAlert(Alert.AlertType.WARNING,
+                    "Validación",
+                    "El intervalo y la ventana de semanas deben ser números enteros.");
+
+        } catch (IllegalArgumentException e) {
+            showAlert(Alert.AlertType.WARNING, "Validación", e.getMessage());
+
+        } catch (Exception e) {
+            showAlert(Alert.AlertType.ERROR,
+                    "Error actualizando disponibilidad",
+                    "No se pudo actualizar la disponibilidad.\n\nDetalle: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
     private void limpiarFormularioDisponibilidad() {
+        disponibilidadSeleccionada = null;
+
+        if (disponibilidadesTable != null) {
+            disponibilidadesTable.getSelectionModel().clearSelection();
+            disponibilidadesTable.setItems(FXCollections.observableArrayList());
+        }
+
         if (disponibilidadMedicoCombo != null) {
+            disponibilidadMedicoCombo.setValue(null);
+        }
+
+        limpiarCamposDisponibilidad(true);
+    }
+
+    private void limpiarCamposDisponibilidad(boolean limpiarMedico) {
+        disponibilidadSeleccionada = null;
+
+        if (disponibilidadesTable != null) {
+            disponibilidadesTable.getSelectionModel().clearSelection();
+        }
+
+        if (limpiarMedico && disponibilidadMedicoCombo != null) {
             disponibilidadMedicoCombo.setValue(null);
         }
 
@@ -529,6 +568,161 @@ public class AdminPanelController {
         if (ventanaSemanasField != null) {
             ventanaSemanasField.clear();
         }
+    }
+
+    private CrearDisponibilidadRequest construirRequestDisponibilidad() {
+        MedicoTablaModel medico = disponibilidadMedicoCombo.getValue();
+        DayOfWeek dia = diaSemanaCombo.getValue();
+        String horaInicioTexto = getText(horaInicioField);
+        String horaFinTexto = getText(horaFinField);
+        String intervaloTexto = getText(intervaloDisponibilidadField);
+        String ventanaTexto = getText(ventanaSemanasField);
+
+        if (medico == null) {
+            throw new IllegalArgumentException("Debe seleccionar un médico.");
+        }
+
+        if (dia == null) {
+            throw new IllegalArgumentException("Debe seleccionar el día de la semana.");
+        }
+
+        if (horaInicioTexto.isEmpty()) {
+            throw new IllegalArgumentException("Debe ingresar la hora de inicio.");
+        }
+
+        if (horaFinTexto.isEmpty()) {
+            throw new IllegalArgumentException("Debe ingresar la hora de fin.");
+        }
+
+        if (intervaloTexto.isEmpty()) {
+            throw new IllegalArgumentException("Debe ingresar el intervalo.");
+        }
+
+        if (ventanaTexto.isEmpty()) {
+            throw new IllegalArgumentException("Debe ingresar la ventana de semanas.");
+        }
+
+        LocalTime horaInicio = LocalTime.parse(horaInicioTexto);
+        LocalTime horaFin = LocalTime.parse(horaFinTexto);
+
+        if (!horaFin.isAfter(horaInicio)) {
+            throw new IllegalArgumentException("La hora fin debe ser posterior a la hora inicio.");
+        }
+
+        int intervalo = Integer.parseInt(intervaloTexto);
+        int ventanaSemanas = Integer.parseInt(ventanaTexto);
+
+        if (intervalo <= 0) {
+            throw new IllegalArgumentException("El intervalo debe ser mayor que cero.");
+        }
+
+        if (ventanaSemanas <= 0) {
+            throw new IllegalArgumentException("La ventana de semanas debe ser mayor que cero.");
+        }
+
+        return new CrearDisponibilidadRequest(
+                medico.getId(),
+                dia,
+                horaInicio,
+                horaFin,
+                intervalo,
+                ventanaSemanas
+        );
+    }
+
+    private void cargarDisponibilidadesMedicoSeleccionado() {
+        if (disponibilidadesTable == null) {
+            return;
+        }
+
+        MedicoTablaModel medico = disponibilidadMedicoCombo != null
+                ? disponibilidadMedicoCombo.getValue()
+                : null;
+
+        if (medico == null) {
+            disponibilidadesTable.setItems(FXCollections.observableArrayList());
+            return;
+        }
+
+        try {
+            DisponibilidadTablaModel[] disponibilidades =
+                    agendaServiceClient.listarDisponibilidadesPorMedico(medico.getId());
+
+            disponibilidadesTable.setItems(
+                    FXCollections.observableArrayList(
+                            disponibilidades == null
+                                    ? List.of()
+                                    : Arrays.asList(disponibilidades)
+                    )
+            );
+
+        } catch (Exception e) {
+            disponibilidadesTable.setItems(FXCollections.observableArrayList());
+
+            showAlert(Alert.AlertType.ERROR,
+                    "Error cargando disponibilidad",
+                    "No se pudieron cargar las configuraciones de disponibilidad.\n\nDetalle: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void cargarDisponibilidadEnFormulario(DisponibilidadTablaModel disponibilidad) {
+        disponibilidadSeleccionada = disponibilidad;
+
+        cargandoDisponibilidadDesdeTabla = true;
+
+        try {
+            if (disponibilidadMedicoCombo != null) {
+                MedicoTablaModel medico = buscarMedicoEnCombo(disponibilidad.getMedicoId());
+
+                if (medico != null) {
+                    disponibilidadMedicoCombo.setValue(medico);
+                }
+            }
+
+            if (diaSemanaCombo != null) {
+                diaSemanaCombo.setValue(disponibilidad.getDiaSemana());
+            }
+
+            if (horaInicioField != null) {
+                horaInicioField.setText(disponibilidad.getHoraInicio() == null
+                        ? ""
+                        : disponibilidad.getHoraInicio().toString());
+            }
+
+            if (horaFinField != null) {
+                horaFinField.setText(disponibilidad.getHoraFin() == null
+                        ? ""
+                        : disponibilidad.getHoraFin().toString());
+            }
+
+            if (intervaloDisponibilidadField != null) {
+                intervaloDisponibilidadField.setText(disponibilidad.getIntervaloMinutos() == null
+                        ? ""
+                        : String.valueOf(disponibilidad.getIntervaloMinutos()));
+            }
+
+            if (ventanaSemanasField != null) {
+                ventanaSemanasField.setText(disponibilidad.getVentanaSemanas() == null
+                        ? ""
+                        : String.valueOf(disponibilidad.getVentanaSemanas()));
+            }
+
+        } finally {
+            cargandoDisponibilidadDesdeTabla = false;
+        }
+    }
+
+    private MedicoTablaModel buscarMedicoEnCombo(Long medicoId) {
+        if (medicoId == null || disponibilidadMedicoCombo == null) {
+            return null;
+        }
+
+        return disponibilidadMedicoCombo.getItems()
+                .stream()
+                .filter(medico -> medicoId.equals(medico.getId()))
+                .findFirst()
+                .orElse(null);
     }
 
     @FXML

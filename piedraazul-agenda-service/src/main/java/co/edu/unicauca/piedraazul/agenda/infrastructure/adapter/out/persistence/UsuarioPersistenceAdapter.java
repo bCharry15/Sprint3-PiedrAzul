@@ -1,11 +1,13 @@
 package co.edu.unicauca.piedraazul.agenda.infrastructure.adapter.out.persistence;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
 import co.edu.unicauca.piedraazul.agenda.domain.port.out.GestionarUsuariosPort;
 import co.edu.unicauca.piedraazul.agenda.model.User;
+import co.edu.unicauca.piedraazul.agenda.model.enums.UserRole;
 import co.edu.unicauca.piedraazul.agenda.repository.UserRepository;
 
 @Component
@@ -20,6 +22,11 @@ public class UsuarioPersistenceAdapter implements GestionarUsuariosPort {
     @Override
     public Optional<User> buscarPorUsername(String username) {
         return userRepository.findByUsername(username);
+    }
+
+    @Override
+    public List<User> listarPorRol(UserRole role) {
+        return userRepository.findByRoleOrderByUsernameAsc(role);
     }
 
     @Override

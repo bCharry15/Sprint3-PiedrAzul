@@ -9,5 +9,7 @@ public interface ConfigurarDisponibilidadUseCase {
 
     DisponibilidadMedico configurar(ConfiguracionDisponibilidadRequest request);
 
+    DisponibilidadMedico actualizar(Long disponibilidadId, ConfiguracionDisponibilidadRequest request);
+
     List<DisponibilidadMedico> listarPorMedico(Long medicoId);
 }

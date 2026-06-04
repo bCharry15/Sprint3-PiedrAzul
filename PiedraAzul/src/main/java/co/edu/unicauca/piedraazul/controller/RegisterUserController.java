@@ -4,6 +4,7 @@ import java.text.Normalizer;
 
 import org.springframework.stereotype.Component;
 
+import co.edu.unicauca.piedraazul.client.AgendaServiceClient;
 import co.edu.unicauca.piedraazul.model.User;
 import co.edu.unicauca.piedraazul.model.enums.Genero;
 import co.edu.unicauca.piedraazul.model.enums.UserRole;
@@ -13,6 +14,7 @@ import co.edu.unicauca.piedraazul.service.IPacienteService;
 import co.edu.unicauca.piedraazul.service.IUserService;
 import co.edu.unicauca.piedraazul.util.DatePickerUtils;
 import co.edu.unicauca.piedraazul.util.SceneManager;
+import co.edu.unicauca.piedraazul.util.SesionUsuario;
 import co.edu.unicauca.piedraazul.util.Vista;
 
 import javafx.collections.FXCollections;
@@ -151,68 +153,96 @@ public class RegisterUserController implements Observer {
 
         boolean registrado = userService.registerUser(user, this);
 
-        if (registrado) {
-            if (selectedRole == UserRole.PACIENTE) {
-                guardarPerfilPaciente(
-                        usuario,
-                        numeroDocumento,
-                        tipoDocumento,
-                        primerNombre,
-                        segundoNombre,
-                        primerApellido,
-                        segundoApellido,
-                        celular
-                );
-            }
-
-            showAlert(Alert.AlertType.INFORMATION,
-                    "Registro exitoso",
-                    "El usuario fue registrado correctamente.");
-
-            clearForm();
-
-        } else {
+        if (!registrado) {
             showAlert(Alert.AlertType.ERROR,
                     "Registro fallido",
                     "El usuario ya existe o no pudo registrarse.");
+            return;
+        }
+
+        boolean perfilPacienteGuardado = true;
+
+        if (selectedRole == UserRole.PACIENTE) {
+            perfilPacienteGuardado = guardarPerfilPaciente(
+                    usuario,
+                    contrasena,
+                    numeroDocumento,
+                    tipoDocumento,
+                    primerNombre,
+                    segundoNombre,
+                    primerApellido,
+                    segundoApellido,
+                    celular
+            );
+        }
+
+        if (selectedRole == UserRole.PACIENTE && !perfilPacienteGuardado) {
+            showAlert(Alert.AlertType.WARNING,
+                    "Registro parcialmente exitoso",
+                    "El usuario fue registrado y ya puede iniciar sesión, pero no se pudo guardar el perfil del paciente automáticamente. "
+                            + "Al ingresar, complete y guarde sus datos desde el panel paciente.");
+        } else {
+            showAlert(Alert.AlertType.INFORMATION,
+                    "Registro exitoso",
+                    "El usuario fue registrado correctamente.");
+        }
+
+        clearForm();
+    }
+
+    private boolean guardarPerfilPaciente(String usuario,
+                                          String contrasena,
+                                          String numeroDocumento,
+                                          String tipoDocumento,
+                                          String primerNombre,
+                                          String segundoNombre,
+                                          String primerApellido,
+                                          String segundoApellido,
+                                          String celular) {
+
+        String nombresCompletos = unirNombres(primerNombre, segundoNombre);
+        String apellidosCompletos = unirNombres(primerApellido, segundoApellido);
+
+        try {
+            /*
+             * El endpoint de perfil del paciente requiere token JWT.
+             * Como el usuario acaba de registrarse, todavía no hay sesión activa.
+             * Por eso se autentica temporalmente para obtener token, se guarda el perfil
+             * y luego se limpia el token para no dejar una sesión iniciada en registro.
+             */
+            User usuarioAutenticado = userService.authenticate(usuario, contrasena);
+
+            if (usuarioAutenticado == null) {
+                System.err.println("REGISTER-USER-CONTROLLER -> No se pudo autenticar temporalmente el usuario paciente: " + usuario);
+                return false;
+            }
+
+            pacienteService.obtenerOCrearPaciente(
+                    usuario,
+                    numeroDocumento,
+                    normalizarTipoDocumento(tipoDocumento),
+                    nombresCompletos,
+                    apellidosCompletos,
+                    celular.isEmpty() ? "Sin celular" : celular,
+                    Genero.OTRO,
+                    birthDatePicker != null ? birthDatePicker.getValue() : null,
+                    crearCorreoSeguro(usuario)
+            );
+
+            System.out.println("REGISTER-USER-CONTROLLER -> Perfil paciente guardado automáticamente para: " + usuario);
+            return true;
+
+        } catch (Exception e) {
+            System.err.println("REGISTER-USER-CONTROLLER -> Usuario creado, pero no se pudo guardar perfil paciente automáticamente.");
+            System.err.println("REGISTER-USER-CONTROLLER -> Detalle: " + e.getMessage());
+            return false;
+
+        } finally {
+            SesionUsuario.limpiarSesion();
+            AgendaServiceClient.limpiarToken();
         }
     }
 
-    private void guardarPerfilPaciente(String usuario,
-                                   String numeroDocumento,
-                                   String tipoDocumento,
-                                   String primerNombre,
-                                   String segundoNombre,
-                                   String primerApellido,
-                                   String segundoApellido,
-                                   String celular) {
-
-    String nombresCompletos = unirNombres(primerNombre, segundoNombre);
-    String apellidosCompletos = unirNombres(primerApellido, segundoApellido);
-
-    try {
-        pacienteService.obtenerOCrearPaciente(
-                usuario,
-                numeroDocumento,
-                normalizarTipoDocumento(tipoDocumento),
-                nombresCompletos,
-                apellidosCompletos,
-                celular.isEmpty() ? "Sin celular" : celular,
-                Genero.OTRO,
-                birthDatePicker != null ? birthDatePicker.getValue() : null,
-                usuario + "@example.com"
-        );
-
-    } catch (Exception e) {
-        /*
-         * No se muestra alerta al usuario porque el registro de usuario fue exitoso.
-         * Si el perfil no se pudo crear automáticamente, el paciente podrá completar
-         * sus datos personales al iniciar sesión desde el panel paciente.
-         */
-        System.err.println("REGISTER-USER-CONTROLLER -> Usuario creado, pero no se pudo guardar perfil paciente automáticamente.");
-        System.err.println("REGISTER-USER-CONTROLLER -> Detalle: " + e.getMessage());
-    }
-}
     @FXML
     private void clearForm() {
         clearIfNotNull(firstNameField);
@@ -351,6 +381,21 @@ public class RegisterUserController implements Observer {
             case "Pasaporte" -> "PASAPORTE";
             default -> tipoDocumento;
         };
+    }
+
+    private String crearCorreoSeguro(String usuario) {
+        String usuarioLimpio = usuario == null ? "usuario" : usuario.trim().toLowerCase();
+
+        usuarioLimpio = usuarioLimpio
+                .replaceAll("[^a-z0-9._-]", ".")
+                .replaceAll("\\.+", ".")
+                .replaceAll("^\\.|\\.$", "");
+
+        if (usuarioLimpio.isBlank()) {
+            usuarioLimpio = "usuario";
+        }
+
+        return usuarioLimpio + "@example.com";
     }
 
     private void clearIfNotNull(TextField field) {

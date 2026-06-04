@@ -166,47 +166,69 @@
                         <Label text="Datos de la cita"
                                style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1f2d3d;"/>
 
+                        <Label text="La disponibilidad se carga automáticamente al seleccionar médico/terapista y fecha. Los días festivos aparecen bloqueados en rojo."
+                               wrapText="true"
+                               style="-fx-font-size: 12px; -fx-text-fill: #64748b;"/>
+
                         <GridPane hgap="15" vgap="14">
                             <columnConstraints>
-                                <ColumnConstraints percentWidth="35"/>
-                                <ColumnConstraints percentWidth="25"/>
+                                <ColumnConstraints percentWidth="45"/>
                                 <ColumnConstraints percentWidth="20"/>
-                                <ColumnConstraints percentWidth="20"/>
+                                <ColumnConstraints percentWidth="5"/>
+                                <ColumnConstraints percentWidth="30"/>
                             </columnConstraints>
 
                             <Label text="Médico/Terapista *" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
                             <ComboBox fx:id="cmbMedico"
                                       maxWidth="Infinity"
+                                      prefHeight="40"
                                       promptText="Seleccione un médico"
                                       GridPane.rowIndex="1"
                                       GridPane.columnIndex="0"/>
 
                             <Label text="Fecha de cita *" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-                            <DatePicker fx:id="dpFechaCita"
-                                        maxWidth="Infinity"
-                                        GridPane.rowIndex="1"
-                                        GridPane.columnIndex="1"/>
+                            <TextField fx:id="txtFechaCitaVisible"
+                                       editable="false"
+                                       focusTraversable="false"
+                                       maxWidth="Infinity"
+                                       prefHeight="40"
+                                       promptText="Seleccione fecha"
+                                       style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-border-color: #2563eb; -fx-border-width: 1.5; -fx-border-radius: 8; -fx-background-radius: 8; -fx-background-color: white;"
+                                       GridPane.rowIndex="1"
+                                       GridPane.columnIndex="1"/>
 
-                            <Label text="Hora disponible *" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                            <Label text=" " GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                            <DatePicker fx:id="dpFechaCita"
+                                        maxWidth="52"
+                                        prefWidth="52"
+                                        prefHeight="40"
+                                        promptText=""
+                                        style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-border-color: #2563eb; -fx-border-radius: 8; -fx-background-radius: 8;"
+                                        GridPane.rowIndex="1"
+                                        GridPane.columnIndex="2"/>
+
+                            <Label text="Hora disponible *" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
                             <ComboBox fx:id="cmbHoraDisponible"
                                       maxWidth="Infinity"
+                                      prefHeight="40"
                                       promptText="Seleccione hora"
                                       GridPane.rowIndex="1"
-                                      GridPane.columnIndex="2"/>
+                                      GridPane.columnIndex="3"/>
 
-                            <Button text="Consultar disponibilidad"
-                                    onAction="#consultarDisponibilidad"
-                                    maxWidth="Infinity"
-                                    style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-font-weight: bold;"
-                                    GridPane.rowIndex="1"
-                                    GridPane.columnIndex="3"/>
+                            <Label fx:id="lblEstadoDisponibilidad"
+                                   text="Seleccione médico/terapista y fecha para cargar las horas automáticamente."
+                                   wrapText="true"
+                                   style="-fx-font-size: 12px; -fx-text-fill: #2563eb; -fx-font-weight: bold;"
+                                   GridPane.rowIndex="2"
+                                   GridPane.columnIndex="0"
+                                   GridPane.columnSpan="4"/>
 
-                            <Label text="Observación" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                            <Label text="Observación" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
                             <TextArea fx:id="txtObservacion"
                                       promptText="Describe brevemente el motivo de la cita"
                                       prefRowCount="3"
                                       wrapText="true"
-                                      GridPane.rowIndex="3"
+                                      GridPane.rowIndex="4"
                                       GridPane.columnIndex="0"
                                       GridPane.columnSpan="4"/>
                         </GridPane>

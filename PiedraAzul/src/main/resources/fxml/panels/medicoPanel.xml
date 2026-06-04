@@ -2,10 +2,12 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
@@ -57,7 +59,7 @@
                 <VBox spacing="6.0">
                     <children>
                         <Label fx:id="bienvenidaLabel" text="Bienvenido, médico" styleClass="top-title"/>
-                        <Label text="Aquí puede consultar sus citas por fecha, cambiar su estado y exportarlas en CSV." styleClass="top-subtitle"/>
+                        <Label text="Aquí puede consultar sus citas por fecha, cambiar su estado, re-agendarlas y exportarlas en CSV." styleClass="top-subtitle"/>
                     </children>
                 </VBox>
 
@@ -96,7 +98,7 @@
 
                         <Label fx:id="cantidadCitasLabel" text="Cantidad de citas: 0" styleClass="count-label"/>
 
-                        <TableView fx:id="citasTable" prefHeight="320.0">
+                        <TableView fx:id="citasTable" prefHeight="300.0">
                             <columns>
                                 <TableColumn fx:id="idColumn" text="ID" prefWidth="70.0"/>
                                 <TableColumn fx:id="pacienteColumn" text="Paciente" prefWidth="220.0"/>
@@ -121,6 +123,65 @@
                                 <Button text="Cancelar cita"
                                         onAction="#cancelarCita"
                                         styleClass="content-button"/>
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+
+                <VBox spacing="14.0" styleClass="form-card">
+                    <children>
+                        <Label text="Re-agendar cita existente" styleClass="form-title"/>
+
+                        <Label text="Seleccione una cita de la tabla, elija una nueva fecha, cargue los horarios disponibles y confirme el re-agendamiento."
+                               wrapText="true"
+                               styleClass="top-subtitle"/>
+
+                        <Label fx:id="citaSeleccionadaReagendamientoLabel"
+                               text="Cita seleccionada: ninguna"
+                               styleClass="count-label"/>
+
+                        <HBox spacing="16.0">
+                            <children>
+                                <VBox spacing="6.0">
+                                    <children>
+                                        <Label text="Nueva fecha" styleClass="field-label"/>
+                                        <DatePicker fx:id="nuevaFechaReagendamientoPicker"/>
+                                    </children>
+                                </VBox>
+
+                                <VBox spacing="6.0">
+                                    <children>
+                                        <Label text="Nueva hora disponible" styleClass="field-label"/>
+                                        <ComboBox fx:id="nuevaHoraReagendamientoCombo"
+                                                  prefWidth="180.0"
+                                                  promptText="Seleccione hora"/>
+                                    </children>
+                                </VBox>
+
+                                <VBox spacing="6.0">
+                                    <children>
+                                        <Label text="Motivo" styleClass="field-label"/>
+                                        <TextField fx:id="motivoReagendamientoField"
+                                                   prefWidth="360.0"
+                                                   promptText="Ej: cambio solicitado por el paciente"/>
+                                    </children>
+                                </VBox>
+                            </children>
+                        </HBox>
+
+                        <HBox spacing="12.0">
+                            <children>
+                                <Button text="Cargar horarios"
+                                        onAction="#cargarHorariosReagendamiento"
+                                        styleClass="content-button"/>
+
+                                <Button text="Re-agendar cita"
+                                        onAction="#reagendarCitaSeleccionada"
+                                        styleClass="content-button"/>
+
+                                <Button text="Limpiar"
+                                        onAction="#limpiarFormularioReagendamiento"
+                                        styleClass="secondary-button"/>
                             </children>
                         </HBox>
                     </children>

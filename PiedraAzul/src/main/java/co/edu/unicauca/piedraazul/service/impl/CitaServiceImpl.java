@@ -2,6 +2,7 @@ package co.edu.unicauca.piedraazul.service.impl;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import co.edu.unicauca.piedraazul.model.Paciente;
 import co.edu.unicauca.piedraazul.model.dto.CitaResponse;
 import co.edu.unicauca.piedraazul.model.dto.CitasPorMedicoFechaResponse;
 import co.edu.unicauca.piedraazul.model.dto.CrearCitaRequest;
+import co.edu.unicauca.piedraazul.model.dto.HistorialReagendamientoTablaModel;
 import co.edu.unicauca.piedraazul.model.enums.EstadoCita;
 import co.edu.unicauca.piedraazul.model.enums.Genero;
 import co.edu.unicauca.piedraazul.service.ICitaService;
@@ -95,6 +97,22 @@ public class CitaServiceImpl implements ICitaService {
         }
 
         return convertirACita(response, null, medico);
+    }
+
+    @Override
+    public List<HistorialReagendamientoTablaModel> consultarHistorialReagendamientos(Long citaId) {
+        if (citaId == null) {
+            return List.of();
+        }
+
+        HistorialReagendamientoTablaModel[] response =
+                agendaServiceClient.listarHistorialReagendamientos(citaId);
+
+        if (response == null || response.length == 0) {
+            return List.of();
+        }
+
+        return Arrays.asList(response);
     }
 
     private Cita convertirACita(CitaResponse response, Paciente paciente, Medico medico) {

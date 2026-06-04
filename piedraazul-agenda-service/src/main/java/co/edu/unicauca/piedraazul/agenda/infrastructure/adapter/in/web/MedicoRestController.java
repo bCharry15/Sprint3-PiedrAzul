@@ -75,6 +75,7 @@ public class MedicoRestController {
         response.put("nombreCompleto", medico.getNombreCompleto());
         response.put("especialidad", medico.getEspecialidad());
         response.put("intervaloMinutos", medico.getIntervaloMinutos());
+        response.put("activo", medico.getActivo());
 
         User user = medico.getUser();
 

@@ -42,6 +42,7 @@ services:
     ports:
       - "8085:8080"
     volumes:
+      - keycloak_data:/opt/keycloak/data
       - ./keycloak/piedrazul-realm.json:/opt/keycloak/data/import/piedrazul-realm.json
     networks:
       - piedraazul-network
@@ -100,6 +101,7 @@ services:
 volumes:
   mariadb_agenda_data:
   mariadb_notification_data:
+  keycloak_data:
 
 networks:
   piedraazul-network:

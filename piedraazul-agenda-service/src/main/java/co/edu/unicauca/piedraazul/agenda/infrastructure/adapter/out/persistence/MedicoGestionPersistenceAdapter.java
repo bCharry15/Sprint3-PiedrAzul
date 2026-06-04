@@ -20,12 +20,12 @@ public class MedicoGestionPersistenceAdapter implements GestionarMedicosPort {
 
     @Override
     public List<Medico> listarTodos() {
-        return medicoRepository.findAll();
+        return medicoRepository.findByActivoTrueOrderByNombreCompletoAsc();
     }
 
     @Override
     public Optional<Medico> buscarPorId(Long medicoId) {
-        return medicoRepository.findById(medicoId);
+        return medicoRepository.findByIdAndActivoTrue(medicoId);
     }
 
     @Override

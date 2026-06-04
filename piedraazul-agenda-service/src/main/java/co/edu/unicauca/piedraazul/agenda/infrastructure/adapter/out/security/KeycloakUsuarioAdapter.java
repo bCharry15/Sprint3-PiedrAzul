@@ -42,18 +42,28 @@ public class KeycloakUsuarioAdapter implements RegistrarUsuarioKeycloakPort {
     @Override
     public void registrarUsuario(String username, String password, String role) {
         try {
+            String usernameNormalizado = validarTexto(username, "El username es obligatorio.");
+            String passwordNormalizada = validarTexto(password, "La contraseña es obligatoria.");
+            String rolNormalizado = validarTexto(role, "El rol es obligatorio.").toUpperCase();
+
             String adminToken = obtenerAdminToken();
 
-            crearUsuarioSiNoExiste(username, password, adminToken);
+            crearUsuarioSiNoExiste(usernameNormalizado, adminToken);
 
-            String userId = obtenerIdUsuario(username, adminToken);
+            String userId = obtenerIdUsuario(usernameNormalizado, adminToken);
 
-            asignarRolAUsuario(userId, role, adminToken);
+            habilitarUsuarioYLimpiarAccionesPendientes(userId, usernameNormalizado, adminToken);
+            actualizarPasswordPorId(userId, passwordNormalizada, false, adminToken);
+            asignarRolAUsuario(userId, rolNormalizado, adminToken);
+
+            System.out.println("AGENDA-SERVICE -> Usuario sincronizado con Keycloak: "
+                    + usernameNormalizado + " / rol: " + rolNormalizado);
 
         } catch (Exception ex) {
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "No fue posible sincronizar el usuario con Keycloak: " + ex.getMessage()
+                    "No fue posible sincronizar el usuario con Keycloak: " + obtenerMensajeCompleto(ex),
+                    ex
             );
         }
     }
@@ -61,35 +71,22 @@ public class KeycloakUsuarioAdapter implements RegistrarUsuarioKeycloakPort {
     @Override
     public void actualizarPassword(String username, String nuevaPassword, boolean temporal) {
         try {
+            String usernameNormalizado = validarTexto(username, "El username es obligatorio.");
+            String passwordNormalizada = validarTexto(nuevaPassword, "La nueva contraseña es obligatoria.");
+
             String adminToken = obtenerAdminToken();
-            String userId = obtenerIdUsuario(username, adminToken);
+            String userId = obtenerIdUsuario(usernameNormalizado, adminToken);
 
-            String url = keycloakBaseUrl
-                    + "/admin/realms/" + realm
-                    + "/users/" + userId
-                    + "/reset-password";
+            habilitarUsuarioYLimpiarAccionesPendientes(userId, usernameNormalizado, adminToken);
+            actualizarPasswordPorId(userId, passwordNormalizada, temporal, adminToken);
 
-            HttpHeaders headers = crearHeadersAdmin(adminToken);
-
-            Map<String, Object> credential = Map.of(
-                    "type", "password",
-                    "value", nuevaPassword,
-                    "temporary", temporal
-            );
-
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(credential, headers);
-
-            restTemplate.exchange(
-                    url,
-                    HttpMethod.PUT,
-                    request,
-                    Void.class
-            );
+            System.out.println("AGENDA-SERVICE -> Password actualizada en Keycloak para: " + usernameNormalizado);
 
         } catch (Exception ex) {
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "No fue posible actualizar la contraseña en Keycloak: " + ex.getMessage()
+                    "No fue posible actualizar la contraseña en Keycloak: " + obtenerMensajeCompleto(ex),
+                    ex
             );
         }
     }
@@ -100,8 +97,8 @@ public class KeycloakUsuarioAdapter implements RegistrarUsuarioKeycloakPort {
 
         String body = "grant_type=password"
                 + "&client_id=admin-cli"
-                + "&username=" + adminUsername
-                + "&password=" + adminPassword;
+                + "&username=" + URLEncoder.encode(adminUsername, StandardCharsets.UTF_8)
+                + "&password=" + URLEncoder.encode(adminPassword, StandardCharsets.UTF_8);
 
         HttpEntity<String> request = new HttpEntity<>(body, headers);
 
@@ -119,24 +116,12 @@ public class KeycloakUsuarioAdapter implements RegistrarUsuarioKeycloakPort {
         return response.getBody().get("access_token").toString();
     }
 
-    private void crearUsuarioSiNoExiste(String username, String password, String adminToken) {
+    private void crearUsuarioSiNoExiste(String username, String adminToken) {
         String url = keycloakBaseUrl + "/admin/realms/" + realm + "/users";
 
         HttpHeaders headers = crearHeadersAdmin(adminToken);
 
-        Map<String, Object> credential = Map.of(
-                "type", "password",
-                "value", password,
-                "temporary", false
-        );
-
-        Map<String, Object> body = Map.of(
-                "username", username,
-                "enabled", true,
-                "emailVerified", true,
-                "credentials", List.of(credential),
-                "requiredActions", List.of()
-        );
+        Map<String, Object> body = crearBodyUsuarioCompleto(username);
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
@@ -147,8 +132,11 @@ public class KeycloakUsuarioAdapter implements RegistrarUsuarioKeycloakPort {
                     request,
                     Void.class
             );
+
+            System.out.println("AGENDA-SERVICE -> Usuario creado en Keycloak: " + username);
+
         } catch (HttpClientErrorException.Conflict ex) {
-            // Si ya existe en Keycloak, continuamos para asignar rol.
+            System.out.println("AGENDA-SERVICE -> Usuario ya existía en Keycloak: " + username);
         }
     }
 
@@ -176,13 +164,93 @@ public class KeycloakUsuarioAdapter implements RegistrarUsuarioKeycloakPort {
 
         Map usuario = (Map) response.getBody().get(0);
 
+        if (usuario.get("id") == null) {
+            throw new IllegalStateException("Keycloak no retornó id para el usuario: " + username);
+        }
+
         return usuario.get("id").toString();
     }
 
-    private void asignarRolAUsuario(String userId, String role, String adminToken) {
-        String rolNormalizado = role.trim().toUpperCase();
+    private void habilitarUsuarioYLimpiarAccionesPendientes(String userId,
+                                                            String username,
+                                                            String adminToken) {
+        String url = keycloakBaseUrl
+                + "/admin/realms/" + realm
+                + "/users/" + userId;
 
-        Map rolKeycloak = obtenerRepresentacionRol(rolNormalizado, adminToken);
+        HttpHeaders headers = crearHeadersAdmin(adminToken);
+
+        Map<String, Object> body = crearBodyUsuarioCompleto(username);
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+
+        restTemplate.exchange(
+                url,
+                HttpMethod.PUT,
+                request,
+                Void.class
+        );
+    }
+
+    private Map<String, Object> crearBodyUsuarioCompleto(String username) {
+        String usernameLimpio = username.trim();
+
+        return Map.of(
+                "username", usernameLimpio,
+                "enabled", true,
+                "emailVerified", true,
+                "firstName", usernameLimpio,
+                "lastName", "PiedraAzul",
+                "email", crearEmailSeguro(usernameLimpio),
+                "requiredActions", List.of()
+        );
+    }
+
+    private String crearEmailSeguro(String username) {
+        String localPart = username
+                .toLowerCase()
+                .replaceAll("[^a-z0-9._-]", ".");
+
+        localPart = localPart
+                .replaceAll("\\.+", ".")
+                .replaceAll("^\\.|\\.$", "");
+
+        if (localPart.isBlank()) {
+            localPart = "usuario";
+        }
+
+        return localPart + "@piedraazul.local";
+    }
+
+    private void actualizarPasswordPorId(String userId,
+                                         String nuevaPassword,
+                                         boolean temporal,
+                                         String adminToken) {
+        String url = keycloakBaseUrl
+                + "/admin/realms/" + realm
+                + "/users/" + userId
+                + "/reset-password";
+
+        HttpHeaders headers = crearHeadersAdmin(adminToken);
+
+        Map<String, Object> credential = Map.of(
+                "type", "password",
+                "value", nuevaPassword,
+                "temporary", temporal
+        );
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(credential, headers);
+
+        restTemplate.exchange(
+                url,
+                HttpMethod.PUT,
+                request,
+                Void.class
+        );
+    }
+
+    private void asignarRolAUsuario(String userId, String role, String adminToken) {
+        Map rolKeycloak = obtenerRepresentacionRol(role, adminToken);
 
         String url = keycloakBaseUrl
                 + "/admin/realms/" + realm
@@ -196,16 +264,22 @@ public class KeycloakUsuarioAdapter implements RegistrarUsuarioKeycloakPort {
                 headers
         );
 
-        restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                request,
-                Void.class
-        );
+        try {
+            restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    request,
+                    Void.class
+            );
+        } catch (HttpClientErrorException.Conflict ex) {
+            System.out.println("AGENDA-SERVICE -> El usuario ya tenía asignado el rol: " + role);
+        }
     }
 
     private Map obtenerRepresentacionRol(String role, String adminToken) {
-        String url = keycloakBaseUrl + "/admin/realms/" + realm + "/roles/" + role;
+        String rolCodificado = URLEncoder.encode(role, StandardCharsets.UTF_8);
+
+        String url = keycloakBaseUrl + "/admin/realms/" + realm + "/roles/" + rolCodificado;
 
         HttpHeaders headers = crearHeadersAdmin(adminToken);
         HttpEntity<Void> request = new HttpEntity<>(headers);
@@ -229,5 +303,31 @@ public class KeycloakUsuarioAdapter implements RegistrarUsuarioKeycloakPort {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(adminToken);
         return headers;
+    }
+
+    private String validarTexto(String valor, String mensaje) {
+        if (valor == null || valor.trim().isEmpty()) {
+            throw new IllegalArgumentException(mensaje);
+        }
+
+        return valor.trim();
+    }
+
+    private String obtenerMensajeCompleto(Exception ex) {
+        if (ex == null) {
+            return "";
+        }
+
+        StringBuilder mensaje = new StringBuilder();
+
+        Throwable actual = ex;
+        while (actual != null) {
+            if (actual.getMessage() != null) {
+                mensaje.append(actual.getMessage()).append(" | ");
+            }
+            actual = actual.getCause();
+        }
+
+        return mensaje.toString();
     }
 }
