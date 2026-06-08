@@ -1,5 +1,7 @@
 # PiedraAzul - Sistema de Agendamiento Médico
 
+PDF: https://docs.google.com/document/d/1sPHt0zLF7bGqXfEkfuj3O59Gnp1NG1h-SVsOveMMYvk/edit?usp=sharing
+
 PiedraAzul es un sistema de agendamiento médico desarrollado como proyecto académico para Ingeniería de Software. Permite gestionar pacientes, médicos/terapistas, disponibilidad, citas, historial y notificaciones.
 
 ## Tecnologías utilizadas
