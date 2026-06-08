@@ -2,6 +2,7 @@ package co.edu.unicauca.piedraazul.controller;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +23,7 @@ import co.edu.unicauca.piedraazul.util.SceneManager;
 import co.edu.unicauca.piedraazul.util.UserSession;
 import co.edu.unicauca.piedraazul.util.Vista;
 import javafx.collections.FXCollections;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -55,8 +57,8 @@ public class AdminPanelController {
 
     @FXML private ComboBox<MedicoTablaModel> disponibilidadMedicoCombo;
     @FXML private ComboBox<DayOfWeek> diaSemanaCombo;
-    @FXML private TextField horaInicioField;
-    @FXML private TextField horaFinField;
+    @FXML private ComboBox<String> horaInicioField;
+    @FXML private ComboBox<String> horaFinField;
     @FXML private TextField intervaloDisponibilidadField;
     @FXML private TextField ventanaSemanasField;
 
@@ -104,17 +106,18 @@ public class AdminPanelController {
         this.userSession = userSession;
     }
 
-    @FXML
-    private void initialize() {
-        configurarTablaMedicos();
-        configurarTablaAgendadores();
-        configurarTablaDisponibilidades();
-        configurarFormularioDisponibilidad();
+   @FXML
+private void initialize() {
+    configurarTablaMedicos();
+    configurarTablaAgendadores();
+    configurarTablaDisponibilidades();
+    configurarFormularioDisponibilidad();
 
-        cargarMedicos();
-        cargarAgendadores();
-        mostrarGestionMedicos();
-    }
+    mostrarGestionMedicos();
+
+    cargarMedicos();
+    cargarAgendadores();
+}
 
     private void configurarTablaMedicos() {
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
@@ -189,6 +192,9 @@ public class AdminPanelController {
                 }
             });
         }
+
+        configurarComboHoras(horaInicioField);
+        configurarComboHoras(horaFinField);
 
         if (disponibilidadMedicoCombo != null) {
             disponibilidadMedicoCombo.setCellFactory(param -> new ListCell<>() {
@@ -554,11 +560,11 @@ public class AdminPanelController {
         }
 
         if (horaInicioField != null) {
-            horaInicioField.clear();
+            horaInicioField.setValue(null);
         }
 
         if (horaFinField != null) {
-            horaFinField.clear();
+            horaFinField.setValue(null);
         }
 
         if (intervaloDisponibilidadField != null) {
@@ -573,8 +579,15 @@ public class AdminPanelController {
     private CrearDisponibilidadRequest construirRequestDisponibilidad() {
         MedicoTablaModel medico = disponibilidadMedicoCombo.getValue();
         DayOfWeek dia = diaSemanaCombo.getValue();
-        String horaInicioTexto = getText(horaInicioField);
-        String horaFinTexto = getText(horaFinField);
+
+        String horaInicioTexto = horaInicioField == null || horaInicioField.getValue() == null
+                ? ""
+                : horaInicioField.getValue().trim();
+
+        String horaFinTexto = horaFinField == null || horaFinField.getValue() == null
+                ? ""
+                : horaFinField.getValue().trim();
+
         String intervaloTexto = getText(intervaloDisponibilidadField);
         String ventanaTexto = getText(ventanaSemanasField);
 
@@ -587,11 +600,11 @@ public class AdminPanelController {
         }
 
         if (horaInicioTexto.isEmpty()) {
-            throw new IllegalArgumentException("Debe ingresar la hora de inicio.");
+            throw new IllegalArgumentException("Debe seleccionar la hora de inicio.");
         }
 
         if (horaFinTexto.isEmpty()) {
-            throw new IllegalArgumentException("Debe ingresar la hora de fin.");
+            throw new IllegalArgumentException("Debe seleccionar la hora de fin.");
         }
 
         if (intervaloTexto.isEmpty()) {
@@ -602,8 +615,8 @@ public class AdminPanelController {
             throw new IllegalArgumentException("Debe ingresar la ventana de semanas.");
         }
 
-        LocalTime horaInicio = LocalTime.parse(horaInicioTexto);
-        LocalTime horaFin = LocalTime.parse(horaFinTexto);
+        LocalTime horaInicio = convertirHoraAmPmALocalTime(horaInicioTexto);
+        LocalTime horaFin = convertirHoraAmPmALocalTime(horaFinTexto);
 
         if (!horaFin.isAfter(horaInicio)) {
             throw new IllegalArgumentException("La hora fin debe ser posterior a la hora inicio.");
@@ -644,26 +657,42 @@ public class AdminPanelController {
             return;
         }
 
-        try {
-            DisponibilidadTablaModel[] disponibilidades =
-                    agendaServiceClient.listarDisponibilidadesPorMedico(medico.getId());
+        Task<List<DisponibilidadTablaModel>> task = new Task<>() {
+            @Override
+            protected List<DisponibilidadTablaModel> call() {
+                DisponibilidadTablaModel[] disponibilidades =
+                        agendaServiceClient.listarDisponibilidadesPorMedico(medico.getId());
 
-            disponibilidadesTable.setItems(
-                    FXCollections.observableArrayList(
-                            disponibilidades == null
-                                    ? List.of()
-                                    : Arrays.asList(disponibilidades)
-                    )
-            );
+                if (disponibilidades == null) {
+                    return List.of();
+                }
 
-        } catch (Exception e) {
+                return Arrays.asList(disponibilidades);
+            }
+        };
+
+        task.setOnSucceeded(event -> {
+            List<DisponibilidadTablaModel> filas = task.getValue();
+            disponibilidadesTable.setItems(FXCollections.observableArrayList(filas));
+        });
+
+        task.setOnFailed(event -> {
             disponibilidadesTable.setItems(FXCollections.observableArrayList());
 
-            showAlert(Alert.AlertType.ERROR,
+            Throwable error = task.getException();
+
+            showAlert(
+                    Alert.AlertType.ERROR,
                     "Error cargando disponibilidad",
-                    "No se pudieron cargar las configuraciones de disponibilidad.\n\nDetalle: " + e.getMessage());
-            e.printStackTrace();
-        }
+                    "No se pudieron cargar las configuraciones de disponibilidad.\n\nDetalle: "
+                            + (error == null ? "Error desconocido." : error.getMessage())
+            );
+        });
+
+        Thread hilo = new Thread(task);
+        hilo.setDaemon(true);
+        hilo.setName("admin-cargar-disponibilidades");
+        hilo.start();
     }
 
     private void cargarDisponibilidadEnFormulario(DisponibilidadTablaModel disponibilidad) {
@@ -685,15 +714,15 @@ public class AdminPanelController {
             }
 
             if (horaInicioField != null) {
-                horaInicioField.setText(disponibilidad.getHoraInicio() == null
-                        ? ""
-                        : disponibilidad.getHoraInicio().toString());
+                horaInicioField.setValue(disponibilidad.getHoraInicio() == null
+                        ? null
+                        : formatearHoraAmPm(disponibilidad.getHoraInicio()));
             }
 
             if (horaFinField != null) {
-                horaFinField.setText(disponibilidad.getHoraFin() == null
-                        ? ""
-                        : disponibilidad.getHoraFin().toString());
+                horaFinField.setValue(disponibilidad.getHoraFin() == null
+                        ? null
+                        : formatearHoraAmPm(disponibilidad.getHoraFin()));
             }
 
             if (intervaloDisponibilidadField != null) {
@@ -767,58 +796,87 @@ public class AdminPanelController {
     }
 
     private void cargarMedicos() {
-        try {
-            MedicoResponse[] medicos = agendaServiceClient.listarMedicos();
+        Task<List<MedicoTablaModel>> task = new Task<>() {
+            @Override
+            protected List<MedicoTablaModel> call() {
+                MedicoResponse[] medicos = agendaServiceClient.listarMedicos();
 
-            if (medicos == null) {
-                medicosTable.setItems(FXCollections.observableArrayList());
-
-                if (disponibilidadMedicoCombo != null) {
-                    disponibilidadMedicoCombo.setItems(FXCollections.observableArrayList());
+                if (medicos == null) {
+                    return List.of();
                 }
 
-                return;
+                return Arrays.stream(medicos)
+                        .map(AdminPanelController.this::toMedicoTablaModel)
+                        .toList();
             }
+        };
 
-            List<MedicoTablaModel> filas = Arrays.stream(medicos)
-                    .map(this::toMedicoTablaModel)
-                    .toList();
+        task.setOnSucceeded(event -> {
+            List<MedicoTablaModel> filas = task.getValue();
 
             medicosTable.setItems(FXCollections.observableArrayList(filas));
 
             if (disponibilidadMedicoCombo != null) {
                 disponibilidadMedicoCombo.setItems(FXCollections.observableArrayList(filas));
             }
+        });
 
-        } catch (Exception e) {
+        task.setOnFailed(event -> {
             medicosTable.setItems(FXCollections.observableArrayList());
 
             if (disponibilidadMedicoCombo != null) {
                 disponibilidadMedicoCombo.setItems(FXCollections.observableArrayList());
             }
 
-            showAlert(Alert.AlertType.ERROR, "Error",
-                    "No se pudieron cargar los médicos desde agenda-service.");
-            e.printStackTrace();
-        }
+            Throwable error = task.getException();
+
+            showAlert(
+                    Alert.AlertType.ERROR,
+                    "Error cargando médicos",
+                    "No se pudieron cargar los médicos desde agenda-service.\n\nDetalle: "
+                            + (error == null ? "Error desconocido." : error.getMessage())
+            );
+        });
+
+        Thread hilo = new Thread(task);
+        hilo.setDaemon(true);
+        hilo.setName("admin-cargar-medicos");
+        hilo.start();
     }
 
     private void cargarAgendadores() {
-        try {
-            List<AgendadorTablaModel> filas = agendadorService.listarAgendadores()
-                    .stream()
-                    .map(this::toAgendadorTablaModel)
-                    .toList();
+        Task<List<AgendadorTablaModel>> task = new Task<>() {
+            @Override
+            protected List<AgendadorTablaModel> call() {
+                return agendadorService.listarAgendadores()
+                        .stream()
+                        .map(AdminPanelController.this::toAgendadorTablaModel)
+                        .toList();
+            }
+        };
 
+        task.setOnSucceeded(event -> {
+            List<AgendadorTablaModel> filas = task.getValue();
             agendadoresTable.setItems(FXCollections.observableArrayList(filas));
+        });
 
-        } catch (Exception e) {
+        task.setOnFailed(event -> {
             agendadoresTable.setItems(FXCollections.observableArrayList());
-            showAlert(Alert.AlertType.ERROR,
-                    "Error",
-                    "No se pudieron cargar los agendadores desde agenda-service.");
-            e.printStackTrace();
-        }
+
+            Throwable error = task.getException();
+
+            showAlert(
+                    Alert.AlertType.ERROR,
+                    "Error cargando agendadores",
+                    "No se pudieron cargar los agendadores desde agenda-service.\n\nDetalle: "
+                            + (error == null ? "Error desconocido." : error.getMessage())
+            );
+        });
+
+        Thread hilo = new Thread(task);
+        hilo.setDaemon(true);
+        hilo.setName("admin-cargar-agendadores");
+        hilo.start();
     }
 
     private MedicoTablaModel toMedicoTablaModel(MedicoResponse medico) {
@@ -852,6 +910,82 @@ public class AdminPanelController {
     private void logout() {
         userSession.clear();
         sceneManager.switchScene(Vista.LOGIN);
+    }
+
+    private void configurarComboHoras(ComboBox<String> combo) {
+    if (combo == null) {
+        return;
+    }
+
+    List<String> horas = new ArrayList<>();
+
+    for (int minutosDelDia = 0; minutosDelDia < 24 * 60; minutosDelDia += 15) {
+        LocalTime hora = LocalTime.of(minutosDelDia / 60, minutosDelDia % 60);
+        horas.add(formatearHoraAmPm(hora));
+    }
+
+    combo.setItems(FXCollections.observableArrayList(horas));
+    combo.setVisibleRowCount(10);
+}
+
+    private String formatearHoraAmPm(LocalTime hora) {
+        if (hora == null) {
+            return "";
+        }
+
+        int hora24 = hora.getHour();
+        int minuto = hora.getMinute();
+
+        String periodo = hora24 < 12 ? "AM" : "PM";
+        int hora12 = hora24 % 12;
+
+        if (hora12 == 0) {
+            hora12 = 12;
+        }
+
+        return String.format("%02d:%02d %s", hora12, minuto, periodo);
+    }
+
+    private LocalTime convertirHoraAmPmALocalTime(String valor) {
+        if (valor == null || valor.trim().isEmpty()) {
+            throw new IllegalArgumentException("Debe seleccionar una hora válida.");
+        }
+
+        String texto = valor.trim()
+                .toUpperCase()
+                .replace("A. M.", "AM")
+                .replace("P. M.", "PM")
+                .replace("A.M.", "AM")
+                .replace("P.M.", "PM");
+
+        if (texto.matches("^\\d{2}:\\d{2}$")) {
+            return LocalTime.parse(texto);
+        }
+
+        if (!texto.matches("^(0?[1-9]|1[0-2]):[0-5][0-9]\\s*(AM|PM)$")) {
+            throw new IllegalArgumentException("Formato de hora inválido. Seleccione una hora de la lista.");
+        }
+
+        String[] partes = texto.split("\\s+");
+        String horaMinuto = partes[0];
+        String periodo = partes[1];
+
+        String[] horaPartes = horaMinuto.split(":");
+
+        int hora = Integer.parseInt(horaPartes[0]);
+        int minuto = Integer.parseInt(horaPartes[1]);
+
+        if ("AM".equals(periodo)) {
+            if (hora == 12) {
+                hora = 0;
+            }
+        } else {
+            if (hora != 12) {
+                hora += 12;
+            }
+        }
+
+        return LocalTime.of(hora, minuto);
     }
 
     private String nombreDiaEnEspanol(DayOfWeek dia) {
