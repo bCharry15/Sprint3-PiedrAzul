@@ -163,13 +163,15 @@
                                         </HBox>
 
                                         <Label text="Nota: para editar o eliminar, seleccione primero un médico de la tabla."
+                                               wrapText="true"
                                                styleClass="top-subtitle"/>
                                     </children>
                                 </VBox>
 
                                 <VBox spacing="14.0" styleClass="form-card">
                                     <children>
-                                        <Label text="Configurar disponibilidad del médico/terapista" styleClass="form-title"/>
+                                        <Label text="Configurar disponibilidad del médico/terapista"
+                                               styleClass="form-title"/>
 
                                         <Label text="Seleccione un médico para listar sus configuraciones. Para editar, seleccione una fila de la tabla, ajuste los campos y presione Actualizar disponibilidad."
                                                wrapText="true"
@@ -177,9 +179,9 @@
 
                                         <GridPane hgap="16.0" vgap="12.0">
                                             <columnConstraints>
-                                                <ColumnConstraints percentWidth="33.0"/>
-                                                <ColumnConstraints percentWidth="33.0"/>
-                                                <ColumnConstraints percentWidth="34.0"/>
+                                                <ColumnConstraints percentWidth="33.33"/>
+                                                <ColumnConstraints percentWidth="33.33"/>
+                                                <ColumnConstraints percentWidth="33.33"/>
                                             </columnConstraints>
 
                                             <children>
@@ -187,8 +189,8 @@
                                                     <children>
                                                         <Label text="Médico/Terapista" styleClass="field-label"/>
                                                         <ComboBox fx:id="disponibilidadMedicoCombo"
-                                                                  maxWidth="Infinity"
-                                                                  promptText="Seleccione médico"/>
+                                                                  promptText="Seleccione médico"
+                                                                  maxWidth="Infinity"/>
                                                     </children>
                                                 </VBox>
 
@@ -196,8 +198,8 @@
                                                     <children>
                                                         <Label text="Día de la semana" styleClass="field-label"/>
                                                         <ComboBox fx:id="diaSemanaCombo"
-                                                                  maxWidth="Infinity"
-                                                                  promptText="Seleccione día"/>
+                                                                  promptText="Seleccione día"
+                                                                  maxWidth="Infinity"/>
                                                     </children>
                                                 </VBox>
 
@@ -212,16 +214,18 @@
                                                 <VBox spacing="6.0" GridPane.columnIndex="0" GridPane.rowIndex="1">
                                                     <children>
                                                         <Label text="Hora inicio" styleClass="field-label"/>
-                                                        <TextField fx:id="horaInicioField"
-                                                                   promptText="Ej: 08:00"/>
+                                                        <ComboBox fx:id="horaInicioField"
+                                                                  promptText="Seleccione hora inicio"
+                                                                  maxWidth="Infinity"/>
                                                     </children>
                                                 </VBox>
 
                                                 <VBox spacing="6.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
                                                     <children>
                                                         <Label text="Hora fin" styleClass="field-label"/>
-                                                        <TextField fx:id="horaFinField"
-                                                                   promptText="Ej: 12:00"/>
+                                                        <ComboBox fx:id="horaFinField"
+                                                                  promptText="Seleccione hora fin"
+                                                                  maxWidth="Infinity"/>
                                                     </children>
                                                 </VBox>
 
@@ -262,15 +266,15 @@
 
                                                 <TableColumn fx:id="disponibilidadDiaColumn"
                                                              text="Día"
-                                                             prefWidth="150.0"/>
+                                                             prefWidth="160.0"/>
 
                                                 <TableColumn fx:id="disponibilidadHoraInicioColumn"
                                                              text="Inicio"
-                                                             prefWidth="110.0"/>
+                                                             prefWidth="130.0"/>
 
                                                 <TableColumn fx:id="disponibilidadHoraFinColumn"
                                                              text="Fin"
-                                                             prefWidth="110.0"/>
+                                                             prefWidth="130.0"/>
 
                                                 <TableColumn fx:id="disponibilidadIntervaloColumn"
                                                              text="Intervalo"
@@ -292,19 +296,19 @@
                                     <children>
                                         <Label text="Médicos registrados" styleClass="form-title"/>
 
-                                        <TableView fx:id="medicosTable" prefHeight="260.0">
+                                        <TableView fx:id="medicosTable" prefHeight="280.0">
                                             <columns>
                                                 <TableColumn fx:id="idColumn"
                                                              text="ID"
                                                              prefWidth="70.0"/>
 
                                                 <TableColumn fx:id="nombreColumn"
-                                                             text="Nombre completo"
+                                                             text="Nombre"
                                                              prefWidth="260.0"/>
 
                                                 <TableColumn fx:id="especialidadColumn"
                                                              text="Especialidad"
-                                                             prefWidth="220.0"/>
+                                                             prefWidth="180.0"/>
 
                                                 <TableColumn fx:id="intervaloColumn"
                                                              text="Intervalo"
@@ -320,11 +324,14 @@
                             </children>
                         </VBox>
 
-                        <VBox fx:id="gestionAgendadoresSection" spacing="20.0" visible="false" managed="false">
+                        <VBox fx:id="gestionAgendadoresSection"
+                              spacing="20.0"
+                              visible="false"
+                              managed="false">
                             <children>
                                 <VBox spacing="14.0" styleClass="form-card">
                                     <children>
-                                        <Label text="Crear nuevo agendador" styleClass="form-title"/>
+                                        <Label text="Registrar agendador" styleClass="form-title"/>
 
                                         <GridPane hgap="16.0" vgap="12.0">
                                             <columnConstraints>
@@ -367,13 +374,14 @@
 
                                 <VBox spacing="14.0" styleClass="form-card">
                                     <children>
-                                        <Label text="Agendadores registrados" styleClass="form-title"/>
+                                        <Label text="Agendadores registrados"
+                                               styleClass="form-title"/>
 
-                                        <TableView fx:id="agendadoresTable" prefHeight="300.0">
+                                        <TableView fx:id="agendadoresTable" prefHeight="320.0">
                                             <columns>
                                                 <TableColumn fx:id="agendadorIdColumn"
                                                              text="ID"
-                                                             prefWidth="90.0"/>
+                                                             prefWidth="80.0"/>
 
                                                 <TableColumn fx:id="agendadorUsernameColumn"
                                                              text="Usuario"
@@ -381,11 +389,11 @@
 
                                                 <TableColumn fx:id="agendadorStatusColumn"
                                                              text="Estado"
-                                                             prefWidth="180.0"/>
+                                                             prefWidth="160.0"/>
 
                                                 <TableColumn fx:id="agendadorRoleColumn"
                                                              text="Rol"
-                                                             prefWidth="180.0"/>
+                                                             prefWidth="160.0"/>
                                             </columns>
                                         </TableView>
                                     </children>

@@ -12,6 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
@@ -31,6 +32,7 @@ import co.edu.unicauca.piedraazul.model.dto.DisponibilidadTablaModel;
 import co.edu.unicauca.piedraazul.model.dto.HistorialReagendamientoTablaModel;
 import co.edu.unicauca.piedraazul.model.dto.MedicoResponse;
 import co.edu.unicauca.piedraazul.model.enums.Genero;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 
 @Component
 public class AgendaServiceClient {
@@ -44,10 +46,14 @@ public class AgendaServiceClient {
     private static String accessToken;
 
     public AgendaServiceClient() {
-        this.restTemplate = new RestTemplate();
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.findAndRegisterModules();
-    }
+    SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+    requestFactory.setConnectTimeout(5000);
+    requestFactory.setReadTimeout(10000);
+
+    this.restTemplate = new RestTemplate(requestFactory);
+    this.objectMapper = new ObjectMapper();
+    this.objectMapper.findAndRegisterModules();
+}
 
     public static String getAccessToken() {
         return accessToken;
