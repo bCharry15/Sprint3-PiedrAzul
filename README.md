@@ -6,8 +6,7 @@ El proyecto integra una aplicación cliente de escritorio desarrollada en JavaFX
 
 ## Documentación del proyecto
 
-* Documento de entrega: file:///C:/Users/Brayan/Desktop/Sprint2-PiedrAzul-entrega-segundo-corte/TerceraEntrega.pdf
-* Documento editable: [Google Docs - PiedraAzul](https://docs.google.com/document/d/1sPHt0zLF7bGqXfEkfuj3O59Gnp1NG1h-SVsOveMMYvk/edit?usp=sharing)
+* Documento: [Google Docs - PiedraAzul](https://docs.google.com/document/d/1sPHt0zLF7bGqXfEkfuj3O59Gnp1NG1h-SVsOveMMYvk/edit?usp=sharing)
 
 ## Problema que resuelve
 
